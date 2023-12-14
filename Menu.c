@@ -22,7 +22,7 @@ extern char levelname_global[];
 extern System_t System;
 extern Timer_t Timers;
 extern GameData_t Game;
-extern Keyboard_t Keyboard;
+extern Input_t g_Input;
 
 char story_text[] =
     "I COULD WRITE A FANCY STORY BUT\n" 
@@ -374,7 +374,7 @@ void saveGameFromMenu()
 
         if (KEY_WAS_HIT(KEY_ENTER))
         {
-            Keyboard.keystates[KEY_ENTER] = 0; // reset Enter button to avoid double press
+            g_Input.KeyStates[KEY_ENTER] = 0; // reset Enter button to avoid double press
             resetInput(&folder_input);
 
             while (!KEY_WAS_HIT(KEY_ENTER))

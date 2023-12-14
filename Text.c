@@ -8,7 +8,7 @@
 /* Text input, output and drawing functions */
 
 extern Menu_t* current_menu;
-extern Keyboard_t Keyboard;
+extern Input_t g_Input;
 uint8_t alphabet [FONT_FILE_SIZE]; // Array to hold the typeface graphics
 
 void loadFont()
@@ -266,7 +266,7 @@ uint8_t keyToAscii(uint8_t keycode)
     return 0;
 }
 
-void getCharacter(KeyEvent_t* event, char* destination_str)
+void getCharacter(InputEvent_t* event, char* destination_str)
 {
     char c;
 
@@ -281,7 +281,7 @@ void getCharacter(KeyEvent_t* event, char* destination_str)
     }
 }
 
-int handleTextInput(KeyEvent_t* event, TextInput_t* destination)
+int handleTextInput(InputEvent_t* event, TextInput_t* destination)
 {   
     char c;
 

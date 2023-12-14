@@ -1,105 +1,117 @@
+#include <dos.h>
+#include <conio.h>
 #include "Common.h"
-#include "Structs.h"
 #include "_dpmi.h"
-
-/* Keyboard driver and control inputs */
-
-extern System_t System;
-Keyboard_t Keyboard = {0};
-Input_t Input = {0};
+#include "Keys.h"
+#include "Structs.h"
 
 static volatile KeyScan_t scan_buffer[SCAN_BUFFER_SIZE];
 static volatile int scan_head = 0;
 static volatile int scan_tail = 0;
 
-static void interrupt (far *old_Keyhandler_ISR)(void);
+Input_t g_Input = {0};// later should be malloc'd when game begins / player joins etc.
+extern System_t System;
 
-void pushKeyEvent(KeyEvent_t event)
+static inline void pushInputEvent(InputEvent_t event)
 {
-    if ((uint8_t)(Keyboard.queue_tail + 1) != Keyboard.queue_head)
-        Keyboard.queue[Keyboard.queue_tail++] = event;
+    if ((uint8_t)(g_Input.queue_tail+1) != g_Input.queue_head)
+        g_Input.EventQueue[g_Input.queue_tail++] = event;
 }
 
-void pushInputEvent(InputEvent_t event)
+static void generateKeyEvent(uint8_t keycode, uint8_t keystate, time_type tick)
 {
-    if ((uint8_t)(Input.queue_tail + 1) != Input.queue_head)
-        Input.EventQueue[Input.queue_tail++] = event;
-}
+    static InputEvent_t event;
+    event.keycode = keycode;
+    event.time = tick;
 
-void handleInputEvents() // keymap should be an array of commands
-{
-    while (Input.queue_head != Input.queue_tail) 
-    {
-        InputEvent_t event = Input.EventQueue[Input.queue_head];
-        Input.queue_head++;
-
-        /* chain of responsibility */
-
-        /* if ((g_Input.flags & INP_FLAG_GLOBAL_KEYS)
-            && handleGlobalKeys(event) == HANDLED)
-            continue;
-
-        if ((g_Input.flags & INP_FLAG_WRITE_TEXT)
-            && handleTextInput(event) == HANDLED)
-            continue;
-
-        // handle UI keys here (menu movement, selection, etc. also in-game inventory and such)
-        //if ((g_Input.flags & INP_FLAG_UI_CONTROL)
-        //    && handleUIControl(event))
-        //    continue;
-
-        if ((g_Input.flags & INP_FLAG_GAME_CONTROL)
-            && handleGameControl(event) == HANDLED)
-            continue;*/
-    }
-}
-
-static void handleScanCode(uint8_t scan)
-{
-    KeyEvent_t event;
-    InputEvent_t inputevent;
-    static uint8_t status = 0;
-
-    if (scan == KEY_SPECIAL_CODE)
-    {
-        status = 0x80;
-        return;
-    }
-
-    event.keycode = (scan & ~KEY_RELEASED_FLAG) | status;
-    event.time    = System.ticks;
-
-    inputevent.keycode = scan;
-    inputevent.time = System.ticks;
-
-    if (scan & KEY_RELEASED_FLAG)
+    if (keystate == EV_INP_KEY_REL)
     {
         // Clear key down flag, set key released flag
-        Keyboard.keystates[event.keycode] &= ~KEY_PRESSED_FLAG;
-        Keyboard.keystates[event.keycode] |= KEY_RELEASED_FLAG;
-        event.type = KEY_RELEASED_FLAG;
-        inputevent.state = 0;
-        pushKeyEvent(event);
-        pushInputEvent(inputevent);
+        g_Input.KeyStates[event.keycode] &= ~KEY_IS_DOWN;
+        g_Input.KeyStates[event.keycode] |= KEYCODE_RELEASED;
+        event.type = EV_INP_KEY_REL;
+        pushInputEvent(event);
     }
-    else if (!(Keyboard.keystates[event.keycode] == KEY_PRESSED_FLAG))
+    else if ((g_Input.KeyStates[event.keycode] & KEY_IS_DOWN) == 0)
     {
-        // Key newly pressed (not a repeat); set key down and key struck flags
-        Keyboard.keystates[event.keycode] |= KEY_PRESSED_FLAG|KEY_HIT_FLAG;
-        event.type = KEY_HIT_FLAG;
-        inputevent.state = 1;
-        pushKeyEvent(event);
-        pushInputEvent(inputevent);
+        // Key newly pressed (not a repeat); set key down and key hit flags
+        g_Input.KeyStates[event.keycode] |= (keycode == KEY_PAUSE) ?
+            EV_INP_KEY_HIT : KEY_IS_DOWN|EV_INP_KEY_HIT;
+        event.type = EV_INP_KEY_HIT;
+        pushInputEvent(event);
     }
-    status = 0;
 }
 
-void interrupt far Keyhandler()
+static void handleScanCode(uint8_t scan, time_type tick)
 {
-    while (inportb(0x64) & 1)
-        handleScanCode(inportb(0x60));
-    outportb(0x20, 0x20);
+    uint8_t keycode, keystate;
+    static uint8_t extended = 0;
+    static uint8_t special = 0;
+    const static uint8_t special_sequence[10] =
+    {
+        SCAN_EXT_PRTSC_START, 0x2A, 0xE0, SCAN_EXT_PRTSC_END,
+        SCAN_EXT_PAUSE_START, 0x1D, 0x45, 0xE1, 0x9D, SCAN_EXT_PAUSE_END
+    };
+
+    if (special == 0)
+    {
+        switch (scan)
+        {
+        case SCAN_EXTENDED: // == SCAN_EXT_PRTSC_START
+            extended = KEYCODE_EXTENDED;
+            special = SCAN_SEQ_INDEX_PRTSC+1;
+            return;
+        case SCAN_EXT_PAUSE_START:
+            special = SCAN_SEQ_INDEX_PAUSE+1;
+            return;
+        }
+    }
+    else if (scan == special_sequence[special])
+    {
+        switch (scan)
+        {
+        case SCAN_EXT_PRTSC_END:
+            generateKeyEvent(KEY_PRINT_SCRN, EV_INP_KEY_HIT, tick);
+            special = 0;
+            return;
+        case SCAN_EXT_PRTSC_END|KEYCODE_RELEASED:
+            generateKeyEvent(KEY_PRINT_SCRN, EV_INP_KEY_REL, tick);
+            special = 0;
+            return;
+        case SCAN_EXT_PAUSE_END:
+            generateKeyEvent(KEY_PAUSE, EV_INP_KEY_HIT, tick);
+            special = 0;
+            return;
+        default:
+            special++;  
+            return;
+        }
+    }
+    else
+        special = 0;
+
+    keycode = (scan & ~KEYCODE_RELEASED) | extended;
+    keystate = (scan & KEYCODE_RELEASED) ? EV_INP_KEY_REL : EV_INP_KEY_HIT;
+    extended = 0;
+
+    generateKeyEvent(keycode, keystate, tick);
 }
+
+void drainScanBuffer()
+{
+    while (scan_head != scan_tail)
+    {
+       handleScanCode(scan_buffer[scan_head].code, scan_buffer[scan_head].tick);
+       incAndWrap(scan_head, SCAN_BUFFER_SIZE);
+    }
+}
+
+void handleInputEvents()
+{
+    drainScanBuffer();
+}
+
+static void (__interrupt __far *OldKeyHandler_ISR)();
 
 static void __interrupt KeyHandler_ISR()
 {
@@ -109,12 +121,14 @@ static void __interrupt KeyHandler_ISR()
     
     while ((inp(0x64) & 1))
     {
+        time_type tick = System.ticks;
         uint8_t scan = inp(0x60);
         int scan_tail_next = rIncAndWrap(scan_tail, SCAN_BUFFER_SIZE);
 
         if (scan_tail_next != scan_head)
         {
             scan_buffer[scan_tail].code = scan;
+            scan_buffer[scan_tail].tick = tick;
             scan_tail = scan_tail_next;
         }
     }
@@ -132,18 +146,18 @@ static void __interrupt KeyHandler_ISR()
 
 static void KeyHandler_end() {};
 
-void initKeyboard()
+static void initKeyHandler()
 {
     uint8_t far *bios_key_state;
 
     dpmi_lock_region((void*)KeyHandler_ISR, (char*)KeyHandler_end - (char*)KeyHandler_ISR);
-    dpmi_lock_region(&Input, sizeof(Input_t));
+    dpmi_lock_region(&g_Input, sizeof(Input_t));
     //dpmi_lock_region(&g_Input.EventQueue, sizeof(KB_QUEUE_LENGTH)*sizeof(InputEvent_t));
     //dpmi_lock_region(&g_Input.KeyStates, sizeof(KB_ARRAY_SIZE));
 
     _asm cli;
     // save address of current keyhandler interrupt function
-    old_Keyhandler_ISR = _dos_getvect(KEYHANDLER_INT);
+    OldKeyHandler_ISR = _dos_getvect(KEYHANDLER_INT);
     // caps lock & num lock off
     bios_key_state = MK_FP(0x040, 0x017);
     *bios_key_state &= (~(32|64));
@@ -153,10 +167,20 @@ void initKeyboard()
     _asm sti;
 }
 
-void deinitKeyboard()
+static void quitKeyHandler()
 {
     // restore old keyhandler
-    asm cli
-    _dos_setvect(KEYHANDLER_INT, old_Keyhandler_ISR);
-    asm sti
+    //_asm cli;
+    _dos_setvect(KEYHANDLER_INT, OldKeyHandler_ISR);
+    //_asm sti;
+}
+
+void initInput()
+{
+    initKeyHandler();
+}
+
+void quitInput()
+{
+    quitKeyHandler();
 }

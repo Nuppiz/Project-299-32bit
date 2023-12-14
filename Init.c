@@ -213,7 +213,7 @@ void initWeapons()
 
 void otherInit()
 {
-    initKeyboard();
+    initInput();
     printf("Keyboard OK\n");
     if (detectMouse() == TRUE)
     {

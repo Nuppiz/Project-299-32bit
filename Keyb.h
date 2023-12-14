@@ -6,7 +6,8 @@
 
 extern uint8_t* g_Keyboard;
 
-void initKeyboard();
-void deinitKeyboard();
+void handleInputEvents();
+void initInput();
+void quitInput();
 
 #endif/* KEYB_H */

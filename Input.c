@@ -12,7 +12,7 @@
 
 flags_t player_control = 0;
 extern System_t System;
-extern Keyboard_t Keyboard;
+extern Input_t g_Input;
 extern State_t States[];
 extern GameData_t Game;
 extern uint8_t music_on;
@@ -133,9 +133,9 @@ void testButtons()
     if (KEY_WAS_HIT(KEY_K))
         PLAYER_ACTOR.health = 10;
 
-    if (KEY_WAS_HIT(KEY_PAGEUP))
+    if (KEY_WAS_HIT(KEY_PAGE_UP))
         changeMusicVolume(VOLUME_UP);
-    if (KEY_WAS_HIT(KEY_PAGEDOWN))
+    if (KEY_WAS_HIT(KEY_PAGE_DOWN))
         changeMusicVolume(VOLUME_DOWN);
     if (KEY_WAS_HIT(KEY_PAD_PLUS))
         changeSFXVolume(VOLUME_UP);
@@ -162,15 +162,15 @@ void testButtons()
 
 void processKeyEvents(uint8_t text_input, TextInput_t* destination)
 {
-    while (Keyboard.queue_head != Keyboard.queue_tail) 
+    while (g_Input.queue_head != g_Input.queue_tail) 
     {
-        KeyEvent_t event = Keyboard.queue[Keyboard.queue_head];
+        InputEvent_t event = g_Input.EventQueue[g_Input.queue_head];
         if (text_input == TRUE)
         {
             handleTextInput(&event, destination);
         }
 
-        Keyboard.queue_head++;
+        g_Input.queue_head++;
 
         // process event here
     }
@@ -180,7 +180,7 @@ void clearKeys()
 {
     int i;
     for (i = 0; i < KB_ARRAY_LENGTH; i++)
-        Keyboard.keystates[i] &= KEY_PRESSED_FLAG;
+        g_Input.KeyStates[i] &= KEY_PRESSED_FLAG;
 }
 
 void gameInput()

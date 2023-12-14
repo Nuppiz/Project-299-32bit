@@ -28,7 +28,7 @@ void quit()
     //gameExit();
     //deinitClock();
     MIDASclose();
-    deinitKeyboard();
+    quitInput();
     setVideoMode(TEXT_MODE);
 }
 
@@ -58,7 +58,8 @@ void updateStates()
 void handleInput()
 {
     // only handle input from the state at the top of the stack
-    Stack[stack_top]->input(); 
+    handleInputEvents();
+    Stack[stack_top]->input();
     clearKeys();
 }
 

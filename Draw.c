@@ -17,7 +17,7 @@ extern Texture_array TileTextures;
 extern Anim_array Animations;
 extern Tile_t TileSet[];
 extern Item_t* Items;
-extern Keyboard_t Keyboard;
+extern Input_t g_Input;
 extern Weapon_t Weapons[];
 
 // test subjects, del later

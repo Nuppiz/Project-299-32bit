@@ -59,6 +59,7 @@ typedef struct
     uint8_t keycode;
     uint8_t state;
     ticks_t time;
+    uint8_t type;
 } InputEvent_t;
 
 typedef struct
