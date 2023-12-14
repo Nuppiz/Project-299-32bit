@@ -19,7 +19,7 @@
 #define PALETTE_DATA        0x03C9
 
 #if SCREEN_WIDTH == 320
-#define SET_PIXEL(x,y,color) *screen_buf[(((y)<<8)+((y)<<6)) + (x)] = color
+#define SET_PIXEL(x,y,color) screen_buf[(((y)<<8)+((y)<<6)) + (x)] = color
 #else
 #define SET_PIXEL(x,y,color) screen_buf[(y)*SCREEN_WIDTH + (x)] = color
 #endif/* DEFINES_H */

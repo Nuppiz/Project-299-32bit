@@ -164,6 +164,7 @@ void gfxInit()
     setPalette_VGA(&NewPalette);
     printf("Palette set\n");
     printf("Graphics init OK\n");
+    //setVideoMode(TEXT_MODE);
 }
 
 void initWeapons()

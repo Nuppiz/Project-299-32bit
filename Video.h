@@ -4,7 +4,7 @@
 #include "Structs.h"
 
 extern uint8_t* VGA;
-extern uint8_t* screen_buf[];
+extern uint8_t* screen_buf;
 
 int checkForVGA();
 void setVideoMode(uint8_t mode);
