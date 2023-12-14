@@ -25,9 +25,9 @@
 #endif/* DEFINES_H */
 
 #if SCREEN_WIDTH == 320
-#define SET_PIXEL_VGA(x,y,color) VGA[(((y)<<8)+((y)<<6)) + (x)] = color
+#define SET_PIXEL_VGA(x,y,color) screen[(((y)<<8)+((y)<<6)) + (x)] = color
 #else
-#define SET_PIXEL_VGA(x,y,color) VGA[(y)*SCREEN_WIDTH + (x)] = color
+#define SET_PIXEL_VGA(x,y,color) screen[(y)*SCREEN_WIDTH + (x)] = color
 #endif/* DEFINES_H */
 
 #define KB_ARRAY_LENGTH     256

@@ -27,19 +27,19 @@ Weapon_t Weapons[NUM_WEAPONS];
 char debug[NUM_DEBUG][DEBUG_STR_LEN];
 #endif
 
-static void interrupt (far *old_Timer_ISR)(void);
+/*static void interrupt (far *old_Timer_ISR)(void);
 static void interrupt (far *midas_Timer_ISR)(void);
 
 unsigned short setTimerBxHookBx;
 unsigned char recomputeMidasTickRate = 0;
-unsigned int midasTickRate = 1000;
+unsigned int midasTickRate = 1000;*/
 
 void MIDAS_CALL TimerCallback(void)
 {
     System.time++;
 }
 
-void setTimerBxHook()
+/*void setTimerBxHook()
 {
         // compute the expected tick rate (as 8.8 fix) with given bx
     _asm {
@@ -98,7 +98,7 @@ void setTimer(uint16_t new_count)
     outportb(CONTROL_8253, CONTROL_WORD);
     outportb(COUNTER_0, LOW_BYTE(new_count));
     outportb(COUNTER_0, HIGH_BYTE(new_count));
-}
+}*/
 
 #if DEBUG == 1
 void initDebug()
@@ -130,7 +130,7 @@ void soundInit()
 {
     printf("Initializing sounds...\n");
     initSounds();
-	printf("OK\n");
+	printf("Sound system OK\n");
 }
 
 void timerInit()
@@ -236,7 +236,6 @@ void otherInit()
     initDebug();
     printf("Debug OK\n");
     #endif
-    printf("%d", System.time);
 }
 
 void mainInit()
@@ -284,10 +283,10 @@ void ingameMenuInit()
     current_menu = &ingamemenu;
 }
 
-void deinitClock()
+/*void deinitClock()
 {
     asm sti;
     setTimer(TIMER_18HZ);
     _dos_setvect(TIME_KEEPER_INT, old_Timer_ISR);
     asm cli;
-}
+}*/

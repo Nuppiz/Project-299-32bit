@@ -1,10 +1,12 @@
 #include "Common.h"
 #include "Structs.h"
 
+#define VGA             0x000A0000
+
 /* Video mode and palette settings */
 
-uint8_t* VGA=(uint8_t *)0xA0000000L;        /* this points to video memory. */
-uint8_t* far screen_buf;             // Double screen buffer
+uint8_t* screen;            /* this points to video memory. */
+uint8_t far* screen_buf;    // Double screen buffer
 Palette_t NewPalette;
 
 int checkForVGA()
@@ -32,6 +34,7 @@ void setVideoMode(uint8_t mode)
     regs.h.al = mode;
     int386(VIDEO_INT, &regs, &regs);
 
+    screen     = (uint8_t*)VGA;
     screen_buf = malloc(SCREEN_SIZE);
 }
 
@@ -81,9 +84,9 @@ void setPalette_VGA(Palette_t* pal)
 }
 
 void render()
-{     
+{
     // copy off-screen buffer to VGA memory
-    memcpy(&VGA, screen_buf, SCREEN_SIZE);
+    memcpy(VGA, screen_buf, SCREEN_SIZE);
 
     // clear off-screen buffer so the screen updates properly
     memset(screen_buf, 0, SCREEN_SIZE);
@@ -92,5 +95,5 @@ void render()
 void renderWithoutClear()
 {     
     // copy off-screen buffer to VGA memory, don't clear buffer
-    memcpy(&VGA, screen_buf, SCREEN_SIZE);
+    memcpy(VGA, screen_buf, SCREEN_SIZE);
 }

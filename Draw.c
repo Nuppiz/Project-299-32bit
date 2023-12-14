@@ -1357,7 +1357,10 @@ void menuDraw()
 
 void titleDraw()
 {
+    char time [50];
+    sprintf(time, "Ticks: %d", System.ticks);
     drawText(93, 96, "PRESS SPACE", COLOUR_BLUE);
+    drawText(1, 1, time, COLOUR_BLUE);
 }
 
 void testRocketAngle()
