@@ -170,7 +170,7 @@ void gfxInit()
 void initWeapons()
 {
     FILE* weapon_file;
-    char c;
+    int c;
     int i = 0;
 
     char name[20] = {'\0'};
@@ -206,7 +206,7 @@ void initWeapons()
             Weapons[i].effect_id = effect_id;
             i++;
         }
-    } while (c = fgetc(weapon_file) != EOF);
+    } while ((c = fgetc(weapon_file)) != EOF);
 
     fclose(weapon_file);
 }

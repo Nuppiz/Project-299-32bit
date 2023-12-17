@@ -281,13 +281,13 @@ void getCharacter(InputEvent_t* event, char* destination_str)
     }
 }
 
-int handleTextInput(InputEvent_t* event, TextInput_t* destination)
+int handleTextInput(InputEvent_t event, TextInput_t* destination)
 {   
     char c;
 
-    if (event->type == KEY_HIT_FLAG)
+    if (event.type == EV_INP_KEY_HIT)
     {
-        switch (event->keycode)
+        switch (event.keycode)
         {
         case KEY_LEFT:
             cursorLeft(destination);
@@ -299,13 +299,14 @@ int handleTextInput(InputEvent_t* event, TextInput_t* destination)
             eraseChar(destination);
             break;
         default:
-            if ((c = keyToAscii(event->keycode)) != 0)
+            if ((c = keyToAscii(event.keycode)) != 0)
             {
-                /*if (c >= 97 && c < 123) // if current typeface doesn't have non-caps letters, onvert them to caps
+                /*if (c >= 97 && c < 123) // if current typeface doesn't have non-caps letters, convert them to caps
                     c -= 32;*/
                 writeChar(destination, c);
-                break;
+                
             }
+            break;
         }
 
     }

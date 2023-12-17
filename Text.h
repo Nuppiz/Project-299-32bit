@@ -10,6 +10,6 @@ int  drawTextClipped(int x, int y, char* string, uint8_t color);
 void drawMenuText();
 void resetInput(TextInput_t* input);
 void getCharacter(InputEvent_t* event, char* destination_str);
-int handleTextInput(InputEvent_t* event, TextInput_t* destination);
+int handleTextInput(InputEvent_t event, TextInput_t* destination);
 
 #endif/* TEXT */

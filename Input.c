@@ -12,9 +12,9 @@
 
 flags_t player_control = 0;
 extern System_t System;
-extern Input_t g_Input;
 extern State_t States[];
 extern GameData_t Game;
+extern Input_t g_Input;
 extern uint8_t music_on;
 extern Menu_t* current_menu;
 extern Menu_t ingamemenu;
@@ -149,6 +149,7 @@ void testButtons()
     {
         quickLoad();
     }
+
     #if DEBUG == 1
     if (KEY_WAS_HIT(KEY_Q) && KEY_WAS_HIT(KEY_BACKSPACE))
     {
@@ -167,7 +168,7 @@ void processKeyEvents(uint8_t text_input, TextInput_t* destination)
         InputEvent_t event = g_Input.EventQueue[g_Input.queue_head];
         if (text_input == TRUE)
         {
-            handleTextInput(&event, destination);
+            handleTextInput(event, destination);
         }
 
         g_Input.queue_head++;
@@ -180,7 +181,7 @@ void clearKeys()
 {
     int i;
     for (i = 0; i < KB_ARRAY_LENGTH; i++)
-        g_Input.KeyStates[i] &= KEY_PRESSED_FLAG;
+        g_Input.KeyStates[i] &= KEY_IS_DOWN;
 }
 
 void gameInput()

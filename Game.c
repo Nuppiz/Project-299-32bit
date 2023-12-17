@@ -85,7 +85,7 @@ int findActorTemplate(char* name)
 int loadActorTemplate(char* filename)
 {
     FILE* act_file;
-    char c;
+    int c;
     char buffer[100];
     int actortemplate_id;
     ActorTemplate_t* actortemplate;
@@ -154,7 +154,7 @@ int loadActorTemplate(char* filename)
                 }
             }
         }
-    } while (c = fgetc(act_file) != EOF);
+    } while ((c = fgetc(act_file)) != EOF);
 
     fclose(act_file);
     actortemplate_count++;

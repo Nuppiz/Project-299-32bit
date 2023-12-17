@@ -178,7 +178,7 @@ int loadAnimation(char* filename)
     int rotation_index;
     long rotated_frame_size;
     double rotation_angle;
-    char c;
+    int c;
     char texture_filename[20];
 
     Animations.anims = realloc(Animations.anims, (Animations.anim_count + 1) * sizeof(Anim_t));
@@ -203,7 +203,7 @@ int loadAnimation(char* filename)
     Animations.anims[anim_id].name = malloc(strlen(filename) + 1);
     strcpy(Animations.anims[anim_id].name, filename);
 
-    while (c = fgetc(anim_file) != EOF)
+    while ((c = fgetc(anim_file)) != EOF)
     {
         if (c == '\n')
             num_frames++;
@@ -219,16 +219,14 @@ int loadAnimation(char* filename)
         fscanf(anim_file, "%20s", texture_filename);
         anim_frame_id = loadTexture(texture_filename, &ObjectTextures);
         Animations.anims[anim_id].frames[animation_frame].frame_id = anim_frame_id;
-        if (anim_id == 1 || anim_id > 3)
+
+        Animations.anims[anim_id].frames[animation_frame].rotations = malloc(NUM_ROTATIONS * sizeof(RotatedTexture_t));
+        for (rotation_index = 0, rotation_angle = 0.0; rotation_index < NUM_ROTATIONS; rotation_index++, rotation_angle += RAD_30)
         {
-            Animations.anims[anim_id].frames[animation_frame].rotations = malloc(NUM_ROTATIONS * sizeof(RotatedTexture_t));
-            for (rotation_index = 0, rotation_angle = 0.0; rotation_index < NUM_ROTATIONS; rotation_index++, rotation_angle += RAD_30)
-            {
-                rotated_frame_size = calculateRotatedTextureSize(rotation_angle, &ObjectTextures.textures[Animations.anims[anim_id].frames[animation_frame].frame_id]);
-                Animations.anims[anim_id].frames[animation_frame].rotations[rotation_index].pixels = malloc(rotated_frame_size);
-                Animations.anims[anim_id].frames[animation_frame].rotations[rotation_index] = 
-                saveRotatedTexture(rotation_angle, &ObjectTextures.textures[Animations.anims[anim_id].frames[animation_frame].frame_id], TRANSPARENT_COLOR);
-            }
+            rotated_frame_size = calculateRotatedTextureSize(rotation_angle, &ObjectTextures.textures[Animations.anims[anim_id].frames[animation_frame].frame_id]);
+            Animations.anims[anim_id].frames[animation_frame].rotations[rotation_index].pixels = malloc(rotated_frame_size);
+            Animations.anims[anim_id].frames[animation_frame].rotations[rotation_index] = 
+            saveRotatedTexture(rotation_angle, &ObjectTextures.textures[Animations.anims[anim_id].frames[animation_frame].frame_id], TRANSPARENT_COLOR);
         }
     }
 

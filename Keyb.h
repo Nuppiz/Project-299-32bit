@@ -4,7 +4,7 @@
 #include "Common.h"
 #include "Keys.h"
 
-extern uint8_t* g_Keyboard;
+extern Input_t g_Input;
 
 void handleInputEvents();
 void initInput();

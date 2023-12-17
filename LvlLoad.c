@@ -44,7 +44,8 @@ char* item_type_strings[NUM_ITEMTYPES] =
 void loadTileset(char* filename)
 {
     FILE* tileset;
-    char c, symbol, tex_id;
+    char symbol, tex_id;
+    char c;
     char name[50];
 
     tileset = fopen(filename, "rb");
@@ -52,7 +53,7 @@ void loadTileset(char* filename)
     if (tileset == NULL)
         tileset = fopen(DEFAULT_TILESET, "rb");
 
-    while (c = fgetc(tileset) != EOF)
+    while ((c = fgetc(tileset)) && !feof(tileset))
     {
         if (c == '$')
         {
@@ -61,7 +62,7 @@ void loadTileset(char* filename)
             tex_id = loadTexture(name, &TileTextures);
             TileSet[symbol].texture_id = tex_id;
 
-            while (c = fgetc(tileset) != '\n' && !feof(tileset))
+            while ((c = fgetc(tileset)) != '\n' && !feof(tileset))
             {
                 switch (c)
                 {
@@ -181,7 +182,7 @@ void levelLoader(char* level_name, uint8_t load_type)
     // general variables
     FILE* level_file;
     char buffer[100];
-    char c;
+    int c;
     int i, levelname_length;
 
     char level_path[30] = LEVEL_PATH; // default level path
@@ -246,7 +247,7 @@ void levelLoader(char* level_name, uint8_t load_type)
         _fmemset(Items, 0, Game.item_capacity * sizeof(Item_t));
     }
 
-    while (c = fgetc(level_file) != EOF)
+    while ((c = fgetc(level_file)) != EOF)
     {
         if (c == '$')
         {
@@ -265,7 +266,7 @@ void levelLoader(char* level_name, uint8_t load_type)
             else if (strcmp(buffer, "tilemap") == 0)
             {
                 i = 0;
-                while (c = fgetc(level_file) != EOF && i < Game.Map.width * Game.Map.height)
+                while ((c = fgetc(level_file)) != EOF && i < Game.Map.width * Game.Map.height)
                 {
                     if (c != '\n')
                     {

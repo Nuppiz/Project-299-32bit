@@ -7,7 +7,7 @@
 #include "General.h"
 
 struct SFX_file SFX_filenames[NUM_SFX];
-uint16_t SFX_array[NUM_SFX];
+MIDASsample SFX_array[NUM_SFX];
 uint8_t music_on = FALSE;
 uint8_t SFX_on = TRUE;
 extern System_t System;
@@ -35,6 +35,10 @@ extern System_t System;
 
 /* maximum number of channels in music: */
 #define MAXMUSCHANNELS 8
+
+#define NUMSTREAMCHANNELS 2
+#define NUMSAMPLECHANNELS 4
+#define NUMMUSICCHANNELS 16
 
 /* sound effect playing rate: */
 #define FXRATE 11025
@@ -184,19 +188,10 @@ void changeMusicVolume(int modifier)
         if (musicVolume < 64 )
         {
             musicVolume += 4;
-            if ( (error = MIDASsetMusicVolume(musicVolume))
+            if ( (error = midasSD->SetMasterVolume(musicVolume))
                 != OK )
                 midasError(error);
         }
-
-        /* Calculate the amplification value that corresponds to the
-            current decrease in volume (in respect to the Sound Device
-            default amplification value): */
-        amplification = defAmplify * 64L*(MAXMUSCHANNELS+FXCHANNELS) /
-            (MAXMUSCHANNELS * musicVolume + FXCHANNELS * 64);
-        if ( (error = midasSD->SetAmplification(amplification)) != OK)
-            midasError(error);
-
     }
 
     else if (modifier == VOLUME_DOWN)
@@ -204,18 +199,10 @@ void changeMusicVolume(int modifier)
         if (musicVolume > 0 )
             {
                 musicVolume -= 4;
-                if ( (error = MIDASsetMusicVolume(musicVolume))
+                if ( (error = midasSD->SetMasterVolume(musicVolume))
                     != OK )
                     midasError(error);
             }
-
-        /* Calculate the amplification value that corresponds to the
-            current decrease in volume (in respect to the Sound Device
-            default amplification value): */
-        amplification = defAmplify * 64L*(MAXMUSCHANNELS+FXCHANNELS) /
-            (MAXMUSCHANNELS * musicVolume + FXCHANNELS * 64);
-        if ( (error = midasSD->SetAmplification(amplification)) != OK)
-            midasError(error);
     }
 }
 
@@ -256,9 +243,17 @@ void initSounds()
 
     MIDASinit();
 
-    /* Open channels for music and sound effects. The first FXCHANNELS
-       channels will always be free for playing effects: */
-    midasOpenChannels(8 + 8);
+    /* Open all channels: */
+    if ( !MIDASopenChannels(NUMSTREAMCHANNELS + NUMSAMPLECHANNELS +
+        NUMMUSICCHANNELS) )
+        midasError(error);
+
+    /* The first NUMSTREAMCHANNELS channels are used for streams, the next
+       NUMSAMPLECHANNELS for samples and the rest for music */
+
+    /* Set automatic sample channel range: */
+    if ( !MIDASsetAutoEffectChannels(NUMSTREAMCHANNELS, NUMSAMPLECHANNELS) )
+        midasError(error);
 
     /* Get Sound Device default amplification value: */
     if ( (error = midasSD->GetAmplification(&defAmplify)) != OK )

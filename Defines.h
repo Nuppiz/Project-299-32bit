@@ -194,9 +194,9 @@
 #define KEY_PRESSED_FLAG    2
 #define KEY_RELEASED_FLAG   0x80 // 128, MSB
 #define KEY_SPECIAL_CODE    0xE0 // 224
-#define KEY_IS_PRESSED(k)   (g_Input.KeyStates[k] & KEY_PRESSED_FLAG)
-#define KEY_WAS_HIT(k)      (g_Input.KeyStates[k] & KEY_HIT_FLAG)
-#define KEY_WAS_RELEASED(k) (g_Input.KeyStates[k] & KEY_RELEASED_FLAG)
+#define KEY_IS_PRESSED(k)   (g_Input.KeyStates[k] & KEY_IS_DOWN)
+#define KEY_WAS_HIT(k)      (g_Input.KeyStates[k] & EV_INP_KEY_HIT)
+#define KEY_WAS_RELEASED(k) (g_Input.KeyStates[k] & KEYCODE_RELEASED)
 #define KEY_WAS_TOGGLED(k)  (g_Input.KeyStates[k] & (KEY_HIT_FLAG|KEY_RELEASED_FLAG))
 
 #define wrapEnd(x,max)    if ((x)>=(max))   (x)=0

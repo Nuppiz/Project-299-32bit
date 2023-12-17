@@ -10,6 +10,7 @@
 #include "Keyb.h"
 #include "Draw.h"
 #include "Video.h"
+#include "Keyb.h"
 
 // Menu functionalities
 
@@ -383,6 +384,7 @@ void saveGameFromMenu()
                 drawMenuText();
                 drawRectangle(current_menu->cursor_x + 18, current_menu->cursor_y - 1, 90, 10, 0);
                 drawText(current_menu->cursor_x + 20, current_menu->cursor_y, folder_input.buffer, COLOUR_WHITE);
+                handleInputEvents();
                 processKeyEvents(TRUE, &folder_input);
                 renderWithoutClear();
                 if (KEY_WAS_HIT(KEY_ESC))

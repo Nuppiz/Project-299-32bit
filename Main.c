@@ -162,14 +162,13 @@ void main()
     if ((checkForVGA() == FALSE))
     {
         printf("No VGA adapter detected!\n"
-                  "This game requires a VGA adapter.\n");
-        delay(500);
+            "This game requires a VGA adapter.\n");
     }
     else
     {
         mainInit();
         pushState(STATE_TITLE);
         loop();
+        quit();
     }
-    quit();
 }
