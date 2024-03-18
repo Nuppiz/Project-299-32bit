@@ -221,7 +221,7 @@ int loadAnimation(char* filename)
         Animations.anims[anim_id].frames[animation_frame].frame_id = anim_frame_id;
 
         Animations.anims[anim_id].frames[animation_frame].rotations = malloc(NUM_ROTATIONS * sizeof(RotatedTexture_t));
-        for (rotation_index = 0, rotation_angle = 0.0; rotation_index < NUM_ROTATIONS; rotation_index++, rotation_angle += RAD_30)
+        for (rotation_index = 0, rotation_angle = 0.0; rotation_index < NUM_ROTATIONS; rotation_index++, rotation_angle += ROTATION_ANGLE_STEP)
         {
             rotated_frame_size = calculateRotatedTextureSize(rotation_angle, &ObjectTextures.textures[Animations.anims[anim_id].frames[animation_frame].frame_id]);
             Animations.anims[anim_id].frames[animation_frame].rotations[rotation_index].pixels = malloc(rotated_frame_size);

@@ -88,7 +88,8 @@
 #define MAX_CORPSES         16
 #define CORPSE_DIAMETER     16
 #define MAX_TEMPSPRITES     32
-#define NUM_ROTATIONS       12
+#define NUM_ROTATIONS       12 // number of pre-rotated sprites per animation
+#define ROTATION_ANGLE_STEP     (RAD_360/NUM_ROTATIONS)
 
 #define WALK_SPEED          2.0
 #define RUN_SPEED           3.5

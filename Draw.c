@@ -568,106 +568,36 @@ void drawPrerotatedTexture(int x, int y, RotatedTexture_t* texture)
 
 void drawTextureFromCache(int x, int y, double angle, AnimFrame_t* source)
 {
-    // this is ugly af and needs to be redone
+    // this is ugly af and needs to be redone - 14th Dec 2023
+    // now it's redone and supports an arbitrary number of rotations - 18th March 2024
 
-    uint8_t angle_index;
+    uint8_t angle_index = 0;
+    double test_angle = (ROTATION_ANGLE_STEP / 2.00);
 
-    if (angle >= RAD_345 || angle < RAD_15)
-    {
+    if (angle >= RAD_360 - (ROTATION_ANGLE_STEP / 2.00) || angle < (ROTATION_ANGLE_STEP / 2.00))
         angle_index = 0;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "0", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_15 && angle < RAD_45)
+    else
     {
-        angle_index = 1;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "1", COLOUR_WHITE);
-        #endif
+        while (test_angle < RAD_360 - (ROTATION_ANGLE_STEP / 2.00))
+        {
+            if (test_angle < angle)
+            {
+                test_angle += ROTATION_ANGLE_STEP;
+                angle_index++;
+            }
+            else
+                break;
+        }
     }
-    else if (angle >= RAD_45 && angle < RAD_75)
+
+    #if DEBUG == 1
+    if (System.debug_mode == TRUE)
     {
-        angle_index = 2;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "2", COLOUR_WHITE);
-        #endif
+        char rotate_debug[5];
+        sprintf(rotate_debug, "I:%d", angle_index);
+        drawTextClipped(x + 12, y - 10, rotate_debug, COLOUR_WHITE);
     }
-    else if (angle >= RAD_75 && angle < RAD_105)
-    {
-        angle_index = 3;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "3", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_105 && angle < RAD_135)
-    {
-        angle_index = 4;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "4", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_135 && angle < RAD_165)
-    {
-        angle_index = 5;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "5", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_165 && angle < RAD_195)
-    {
-        angle_index = 6;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "6", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_195 && angle < RAD_225)
-    {
-        angle_index = 7;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "7", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_225 && angle < RAD_255)
-    {
-        angle_index = 8;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "8", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_255 && angle < RAD_285)
-    {
-        angle_index = 9;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "9", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_285 && angle < RAD_315)
-    {
-        angle_index = 10;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "10", COLOUR_WHITE);
-        #endif
-    }
-    else if (angle >= RAD_315 && angle < RAD_345)
-    {
-        angle_index = 11;
-        #if DEBUG == 1
-        if (System.debug_mode == TRUE)
-            drawTextClipped(x, y - 10, "11", COLOUR_WHITE);
-        #endif
-    }
+    #endif
 
     drawPrerotatedTexture(x, y, &source->rotations[angle_index]);
 }
