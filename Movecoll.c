@@ -119,6 +119,9 @@ void playerTurnTowards(Vec2 target)
         actor_to_target.x = 1;
 
     PLAYER_ACTOR.angle = atan2(actor_to_target.y, actor_to_target.x);
+    //atan2 only returns values from Pi to -Pi, so we need this hack for angle values above Pi
+    if (PLAYER_ACTOR.angle < 0.0)
+        PLAYER_ACTOR.angle = RAD_360 + PLAYER_ACTOR.angle;
 }
 
 void edgeDetectActor(Actor_t* actor)
@@ -382,5 +385,6 @@ void physics()
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
         sprintf(debug[DEBUG_VELOCITY], "V.X: %f\nV.Y %f", PLAYER_ACTOR.velocity.x, PLAYER_ACTOR.velocity.y);
+        sprintf(debug[DEBUG_VELOCITY], "ANGLE: %lf", PLAYER_ACTOR.angle);
     #endif
 }
