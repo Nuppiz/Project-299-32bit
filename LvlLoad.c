@@ -88,8 +88,8 @@ void entityLoader(FILE* level_file, int entity_id, int entity_type)
     int ent_x, ent_y, state, tilemap_location, only_once; double angle; // common variables
     int locked, key; // door variables
     int target; // switch/button variables
-    ticks_t last_spawn_time, spawn_interval; id_type toggleable, max_actors, num_actors, spawn_type, trigger_on_death; // spawner variables
-    ticks_t last_trigger_time; ticks_t trigger_interval; int target_ids[4]; // trigger variables
+    ticks_t spawn_interval; id_type toggleable, max_actors, spawn_type, trigger_on_death; // spawner variables
+    ticks_t trigger_interval; int target_ids[4]; // trigger variables
     int max_value, target_id; // counter variables
     char level_name[20]; int portal_x, portal_y; // portal variables
 
@@ -183,7 +183,7 @@ void levelLoader(char* level_name, uint8_t load_type)
     FILE* level_file;
     char buffer[100];
     int c;
-    int i, levelname_length;
+    int i;
 
     char level_path[30] = LEVEL_PATH; // default level path
     char temp_level[30]; // temporary storage for the level name, as otherwise the filename pointers go bonkers
@@ -434,8 +434,6 @@ void saveLevelState(char* foldername, char* levelname)
 void loadGameState(char* foldername)
 {
     FILE* state_file;
-    int player_hp, current_weapon;
-    Vec2 player_loc;
     char savefilepath[50] = "SAVES/";
 
     strcat(savefilepath, foldername);
@@ -445,15 +443,10 @@ void loadGameState(char* foldername)
     {
         state_file = fopen(savefilepath, "rb");
         fseek(state_file, 0x0F, SEEK_SET);
-        fread(&player_hp, 2, 1, state_file);
-        if (player_hp > 0) // avoid infinite death loop
-            PLAYER_ACTOR.health = player_hp;
-        fread(&player_loc.x, 8, 1, state_file);
-        fread(&player_loc.y, 8, 1, state_file);
-        fread(&current_weapon, 2, 1, state_file);
-        PLAYER_ACTOR.position.x = player_loc.x;
-        PLAYER_ACTOR.position.y = player_loc.y;
-        PLAYER_ACTOR.primary_weapon_id = current_weapon;
+        fread(&PLAYER_ACTOR.health, 2, 1, state_file);
+        fread(&PLAYER_ACTOR.position.x, 8, 1, state_file);
+        fread(&PLAYER_ACTOR.position.y, 8, 1, state_file);
+        fread(&PLAYER_ACTOR.primary_weapon_id, 2, 1, state_file);
         updateGridLoc(&PLAYER_ACTOR);
         // just in case the player's location in the save file IS on a portal (shouldn't be if level is made correctly)
         if (getEntityTypeAt(PLAYER_ACTOR.grid_loc) == ENT_PORTAL)
@@ -483,7 +476,7 @@ void loadLevelState(char* foldername, char* savename)
         perror("fopen");
         delay(60000);
     }
-    fseek(save_file, 0x21, SEEK_SET);
+    fseek(save_file, 0x28, SEEK_SET);
     fread(&Game.actor_count, 2, 1, save_file);
     fread(&Game.actor_capacity, 2, 1, save_file);
     fread(&Game.id_capacity, 2, 1, save_file);
@@ -492,6 +485,7 @@ void loadLevelState(char* foldername, char* savename)
     fread(&Game.item_capacity, 1, 1, save_file);
     Items = malloc(Game.item_capacity * sizeof(Item_t));
     fread(&Game.player_id, 2, 1, save_file);
+    fseek(save_file, 0x34, SEEK_SET);
     fread(Game.Actors, sizeof(Actor_t), Game.actor_capacity, save_file);
     fread(Game.ActorsById, sizeof(id_type), Game.id_capacity, save_file);
     fread(ActorTemplates, sizeof(ActorTemplate_t), actortemplate_count, save_file);

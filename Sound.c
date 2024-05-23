@@ -7,10 +7,11 @@
 #include "General.h"
 
 struct SFX_file SFX_filenames[NUM_SFX];
-MIDASsample SFX_array[NUM_SFX];
+MIDASsample* SFX_array;
 uint8_t music_on = FALSE;
 uint8_t SFX_on = TRUE;
 extern System_t System;
+id_type num_sfx = 0;
 
 /*
  * Simplified MIDAS Sound System API
@@ -132,14 +133,27 @@ static unsigned midasSDChannels[32] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 static char     errmsg[90];
 static int      dResult;
 
-void loadSFX()
+void loadBaseSFX()
 {
+    // loads a premade list of SFX files into memory
     int i;
 
-    for (i = 0; i < NUM_SFX; i++)
+    for (i = 0; i < num_sfx; i++)
     {
         SFX_array[i] = MIDASloadRawSample(SFX_filenames[i].filename, MIDAS_SAMPLE_8BIT_MONO, SFX_filenames[i].looping);
-    }   
+    }
+}
+
+id_type loadSFXFromFile(char* filename)
+{
+    // loads an individual SFX file into memory and returns its ID in the array
+    id_type sfx_id = num_sfx;
+
+    SFX_array = realloc(SFX_array, (num_sfx + 1) * sizeof(MIDASsample));
+    SFX_array[sfx_id] = MIDASloadRawSample(filename, MIDAS_SAMPLE_8BIT_MONO, 0);
+    num_sfx++;
+
+    return sfx_id;
 }
 
 // effect_id comes from the enum table SoundEffects
@@ -161,7 +175,7 @@ void stopSFX()
 {
     // deallocate memory for sound effects
     int i;
-    for (i = 0; i < NUM_SFX; i++)
+    for (i = 0; i < num_sfx; i++)
     {
         MIDASfreeSample(SFX_array[i]);
     }
@@ -230,6 +244,7 @@ void generateSFXFileTable()
         strcpy(SFX_filenames[i].filename, filename);
         SFX_filenames[i].looping = looping;
         i++;
+        num_sfx++;
     } while (fgetc(SFX_list_file) != EOF);
     
     fclose(SFX_list_file);
@@ -265,7 +280,8 @@ void initSounds()
     generateSFXFileTable();
     printf("OK!\n");
     printf("Loading base SFX files into memory...\n");
-    loadSFX();
+    SFX_array = malloc(num_sfx * sizeof(MIDASsample));
+    loadBaseSFX();
     printf("OK!\n");
     free(SFX_filenames);
 }

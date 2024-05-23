@@ -89,7 +89,7 @@ void render()
     memcpy(VGA, screen_buf, SCREEN_SIZE);
 
     // clear off-screen buffer so the screen updates properly
-    memset(screen_buf, 0, SCREEN_SIZE);
+    _fmemset(screen_buf, 0, SCREEN_SIZE);
 }
 
 void renderWithoutClear()

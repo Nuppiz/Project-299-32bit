@@ -161,7 +161,7 @@ typedef struct
     uint8_t projectile_spread; // maximum of how much each projectile diverts from the targeted point (i.e. accuracy)
     ticks_t shot_delay; // delay between each shot/swing/whatever
     int8_t ammo_type; // if -1, infinite ammo/melee
-    uint8_t sound_id; // id number to the enum table that contains sound effects
+    uint8_t sound_id; // id number of weapon firing sound
     int16_t sprite_id; // id number for projectile sprite (if not hitscan), -1 for none
     int8_t effect_id; // effect to spawn on hit (explosion, poison etc.), -1 for no effect
 } Weapon_t;
@@ -213,6 +213,7 @@ typedef struct
     Vec2     velocity;  // velocity
     float    magnitude; // magnitude of velocity
     int      radius;    // collision box/circle radius
+    int health;
     
     flags_t control;
     uint8_t ai_mode;
@@ -221,9 +222,7 @@ typedef struct
     id_type    target_id_secondary; // index number of the AI's secondary target in the ActorsById array
     Vec2    move_target;
 
-    uint8_t color;
     id_type texture_id;
-    int health;
     id_type trigger_on_death; // entity ID to trigger on death
     ticks_t last_shot; // last shot taken
     int primary_weapon_id;
