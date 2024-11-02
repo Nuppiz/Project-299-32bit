@@ -388,7 +388,6 @@ void saveGameState(char* foldername)
     if (!save_file)
     {
         perror("fopen");
-        delay(60000);
     }
     fwrite(&Game.current_level_name, LEVEL_NAME_MAX, 1, save_file);
     fwrite(&PLAYER_ACTOR.health, 2, 1, save_file);
@@ -419,7 +418,6 @@ void saveLevelState(char* foldername, char* levelname)
     {
         printf("%s", levelname);
         perror("fopen");
-        delay(60000);
     }
     fwrite(&Game, sizeof(GameData_t), 1, save_file);
     fwrite(Game.Actors, sizeof(Actor_t), Game.actor_capacity, save_file);
@@ -474,7 +472,6 @@ void loadLevelState(char* foldername, char* savename)
     {
         printf("%s", savename);
         perror("fopen");
-        delay(60000);
     }
     fseek(save_file, 0x28, SEEK_SET);
     fread(&Game.actor_count, 2, 1, save_file);

@@ -100,7 +100,6 @@ void copyFile(char* source_dirname, char* source_filename, char* dest_dirname, c
     {
         printf("%s\n", source_path);
         perror("fopen");
-        delay(60000);
     }
   
     // open second file for writing
@@ -109,7 +108,6 @@ void copyFile(char* source_dirname, char* source_filename, char* dest_dirname, c
     {
         printf("%s\n", dest_path);
         perror("fopen");
-        delay(60000);
     }
   
     // read contents from file

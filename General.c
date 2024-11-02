@@ -36,7 +36,6 @@ void quitError(char* string)
 {
     setVideoMode(TEXT_MODE);
     printf("\nFatal error: %s", string);
-    delay(9999999);
     System.running = 0;
     quit();
 }
