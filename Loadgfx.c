@@ -4,6 +4,9 @@
 #include "General.h"
 #include "Draw.h"
 
+#include "Def_draw.h"
+#include "Def_math.h"
+
 /* Graphics loading functions */
 
 extern System_t System;

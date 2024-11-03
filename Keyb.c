@@ -5,6 +5,8 @@
 #include "Keys.h"
 #include "Structs.h"
 
+#include "Def_inp.h"
+
 static volatile KeyScan_t scan_buffer[SCAN_BUFFER_SIZE];
 static volatile int scan_head = 0;
 static volatile int scan_tail = 0;

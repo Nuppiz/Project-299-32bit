@@ -2,6 +2,7 @@
 #define STRUCTS_H
 
 #include "Common.h"
+#include "Def_inp.h"
 
 typedef struct
 {

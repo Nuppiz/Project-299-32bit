@@ -4,6 +4,13 @@
 #include "Keyb.h"
 #include "Sound.h"
 
+#include "Def_ai.h"
+#include "Def_game.h"
+#include "Def_inp.h"
+#include "Def_math.h"
+#include "Def_phys.h"
+#include "Def_vid.h"
+
 /* Actor_t movement and collision detection */
 
 extern System_t System;

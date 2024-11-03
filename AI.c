@@ -4,6 +4,9 @@
 #include "Vectors.h"
 #include "Action.h"
 
+#include "Def_ai.h"
+#include "Def_inp.h"
+
 /* AI functions */
 
 extern System_t System;

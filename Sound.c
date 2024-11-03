@@ -6,6 +6,8 @@
 #include "Exit.h"
 #include "General.h"
 
+#include "Def_inp.h"
+
 struct SFX_file SFX_filenames[NUM_SFX];
 MIDASsample* SFX_array;
 uint8_t music_on = FALSE;

@@ -3,7 +3,10 @@
 #include "Keyb.h"
 #include "Video.h"
 
-#define FONT_FILE_SIZE 7128
+#include "Def_draw.h"
+#include "Def_inp.h"
+#include "Def_text.h"
+#include "Def_vid.h"
 
 /* Text input, output and drawing functions */
 

@@ -2,6 +2,8 @@
 #include "Structs.h"
 #include "Video.h"
 
+#include "Def_vid.h"
+
 /* General functions used everywhere */
 
 extern System_t System;

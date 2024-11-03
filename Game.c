@@ -6,6 +6,8 @@
 #include "Vectors.h"
 #include "General.h"
 
+#include "Def_game.h"
+
 #define ACTOR_CHUNK_SIZE 16
 
 /* Game data and actor array functions */

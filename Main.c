@@ -17,6 +17,9 @@
 #include "General.h"
 #include "Midas\midasdll.h"
 
+#include "Def_ste.h"
+#include "Def_vid.h"
+
 System_t System = {0};
 Timer_t Timers = {0};
 extern State_t* Stack[NUM_STATES];

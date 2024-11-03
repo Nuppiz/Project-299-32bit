@@ -1,7 +1,8 @@
 #include "Common.h"
 #include "Structs.h"
 
-#define VGA             0x000A0000
+#include "Def_vid.h"
+#include "Def_wat.h"
 
 /* Video mode and palette settings */
 

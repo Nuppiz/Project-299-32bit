@@ -12,6 +12,10 @@
 #include "Video.h"
 #include "Keyb.h"
 
+#include "Def_lev.h"
+#include "Def_menu.h"
+#include "Def_draw.h"
+
 // Menu functionalities
 
 Menu_t* current_menu;

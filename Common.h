@@ -19,9 +19,10 @@
 #include <ALLOC.H>
 #endif
 
+#include "Config.h"
 #include "Debug.h"
-#include "Defines.h"
 #include "Enums.h"
+#include "Def_gen.h"
 
 typedef long time_type;
 typedef long ticks_t;

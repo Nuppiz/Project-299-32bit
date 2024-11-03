@@ -5,6 +5,8 @@
 #include "Filech.h"
 #include "Sound.h"
 
+#include "Def_ste.h"
+
 /* State exit functions */
 
 extern State_t States[];

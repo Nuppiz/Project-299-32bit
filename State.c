@@ -5,6 +5,8 @@
 #include "Exit.h"
 #include "Enums.h"
 
+#include "Def_ste.h"
+
 /* Game states and stack manager */
 
 State_t* Stack[NUM_STATES];

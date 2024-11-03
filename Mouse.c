@@ -4,6 +4,8 @@
 #include "Movecoll.h"
 #include "Action.h" // for testing
 
+#include "Def_game.h"
+
 extern GameData_t Game;
 extern flags_t player_control;
 

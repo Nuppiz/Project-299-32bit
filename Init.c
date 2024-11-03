@@ -14,6 +14,9 @@
 #include "Keyb.h"
 #include "Midas\midasdll.h"
 
+#include "Def_ste.h"
+#include "Def_vid.h"
+
 extern System_t System;
 extern Timer_t Timers;
 extern State_t States[];

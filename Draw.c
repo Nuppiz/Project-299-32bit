@@ -7,6 +7,11 @@
 #include "Loadgfx.h"
 #include "Keyb.h"
 
+#include "Def_draw.h"
+#include "Def_game.h"
+#include "Def_math.h"
+#include "Def_vid.h"
+
 /* Graphics drawing functions */
 
 extern System_t System;

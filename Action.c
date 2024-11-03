@@ -1,4 +1,3 @@
-#include "Common.h"
 #include "Structs.h"
 #include "Movecoll.h"
 #include "Sound.h"
@@ -8,6 +7,13 @@
 #include "LvlLoad.h"
 #include "Filech.h"
 #include "Video.h"
+#include "Common.h"
+
+#include "Def_game.h"
+#include "Def_lev.h"
+#include "Def_draw.h"
+#include "Def_math.h"
+#include "Def_vid.h"
 
 /* Various actions between the player and other Entities/actors */
 

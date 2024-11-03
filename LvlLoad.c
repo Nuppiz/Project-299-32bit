@@ -9,6 +9,9 @@
 #include "Action.h"
 #include "General.h"
 
+#include "Def_lev.h"
+#include "Def_game.h"
+
 /* Level data and entity loader, savegame functionalities*/
 
 Entity_t Entities[MAX_ENTITIES];

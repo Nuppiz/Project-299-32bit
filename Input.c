@@ -10,6 +10,9 @@
 #include "Mouse.h"
 #include "Sound.h"
 
+#include "Def_inp.h"
+#include "Def_game.h"
+
 flags_t player_control = 0;
 extern System_t System;
 extern State_t States[];
