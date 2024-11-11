@@ -7,18 +7,19 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/General.h"
 #include "SRC/GFX/Text.h"
-#include "SRC/SOUND/Sound.h"
-#include "SRC/SOUND/MIDAS/midasdll.h"
 
+#include "Dpmi.h"
 #include "Keyb.h"
 #include "Menu.h"
 #include "Mouse.h"
-#include "Patch.h"
 #include "Video.h"
 #include "Def_ste.h"
+#include "Def_time.h"
 #include "Def_vid.h"
 #include "Str_menu.h"
 #include "Str_sys.h"
+
+#include <allegro.h>
 
 extern System_t System;
 extern Timer_t Timers;
@@ -34,76 +35,26 @@ char debug[NUM_DEBUG][DEBUG_STR_LEN];
 #endif
 
 /*static void interrupt (far *old_Timer_ISR)(void);
-static void interrupt (far *midas_Timer_ISR)(void);
-
-unsigned short setTimerBxHookBx;
-unsigned char recomputeMidasTickRate = 0;
-unsigned int midasTickRate = 1000;*/
-
-void MIDAS_CALL TimerCallback(void)
-{
-    System.time++;
-}
-
-/*void setTimerBxHook()
-{
-        // compute the expected tick rate (as 8.8 fix) with given bx
-    _asm {
-        skipRecompute: popf
-        pushf
-        cmp setTimerBxHookBx, bx
-        jz skipRecompute
-        mov setTimerBxHookBx, bx
-        inc recomputeMidasTickRate
-    }
-}
 
 void interrupt far Timer(void)
 {
     static long last_clock_time = 0;
 
-    asm pushf;
-    asm cli;
-
-    ++System.time;
-
-    if (recomputeMidasTickRate)
-    {
-        midasTickRate = 1000UL / (1193100UL / setTimerBxHookBx);
-        Timers.last_midas_time = System.time;
-        recomputeMidasTickRate = 0;
-    }
-
-    if (Timers.last_midas_time + midasTickRate < System.time)
-    {
-        Timers.last_midas_time = System.time;
-        midas_Timer_ISR();
-    }
+    System.time++;
 
     // keeps the PC clock ticking in the background
-    if (last_clock_time + 55 < System.time)
+    if (last_clock_time + 182 < System.time)
     {
         last_clock_time = System.time;
         old_Timer_ISR();
-    } 
-    else
-    {
-        outportb(PIC2_COMMAND, PIC_EOI);
-        outportb(PIC1_COMMAND, PIC_EOI);
     }
-
-    asm popf;
-}
-
-void interrupt far stubISR(void) {
-
 }
 
 void setTimer(uint16_t new_count)
 {
-    outportb(CONTROL_8253, CONTROL_WORD);
-    outportb(COUNTER_0, LOW_BYTE(new_count));
-    outportb(COUNTER_0, HIGH_BYTE(new_count));
+    outp(CONTROL_8253, CONTROL_WORD);
+    outp(COUNTER_0, LOW_BYTE(new_count));
+    outp(COUNTER_0, HIGH_BYTE(new_count));
 }*/
 
 #if DEBUG == 1
@@ -135,19 +86,24 @@ void initSystem()
 void soundInit()
 {
     printf("Initializing sounds...\n");
-    initSounds();
+    //initSounds();
 	printf("Sound system OK\n");
+}
+
+void sysTime()
+{
+    //keeps the game ticking via Allegro's timer
+    System.time++;
 }
 
 void timerInit()
 {
-    printf("Initializing timer...\n");
-    MIDASsetTimerCallbacks(1000000, FALSE, &TimerCallback, NULL, NULL);
-    /*midas_Timer_ISR = _dos_getvect(TIME_KEEPER_INT);
+    allegro_init();
+    install_timer();
+    install_int(sysTime, 1);
+    /*old_Timer_ISR = _dos_getvect(TIME_KEEPER_INT);
     _dos_setvect(TIME_KEEPER_INT, Timer);
-    setTimer(TIMER_1000HZ);
-    asm sti;*/
-	printf("OK\n");
+    setTimer(TIMER_1000HZ);*/
 }
 
 void gfxInit()
@@ -247,7 +203,7 @@ void otherInit()
 void mainInit()
 {
     // sound
-    soundInit();
+    //soundInit();
     // timer
     timerInit();
     // misc
@@ -291,8 +247,6 @@ void ingameMenuInit()
 
 /*void deinitClock()
 {
-    asm sti;
     setTimer(TIMER_18HZ);
     _dos_setvect(TIME_KEEPER_INT, old_Timer_ISR);
-    asm cli;
 }*/

@@ -7,7 +7,7 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GFX/Text.h"
 #include "SRC/GFX/Str_text.h"
-#include "SRC/SOUND/Sound.h"
+//#include "SRC/SOUND/Sound.h"
 
 #include "Keyb.h"
 #include "Menu.h"
@@ -23,7 +23,7 @@ extern System_t System;
 extern State_t States[];
 extern GameData_t Game;
 extern Input_t g_Input;
-extern uint8_t music_on;
+//extern uint8_t music_on;
 extern Menu_t* current_menu;
 extern Menu_t ingamemenu;
 extern Weapon_t Weapons[];
@@ -130,7 +130,7 @@ void testButtons()
     if (KEY_WAS_HIT(KEY_DELETE))
         deleteLastActor();
 
-    if (KEY_WAS_HIT(KEY_M))
+    /*if (KEY_WAS_HIT(KEY_M))
     {
         if (music_on == TRUE)
             stopMusic();
@@ -148,7 +148,7 @@ void testButtons()
     if (KEY_WAS_HIT(KEY_PAD_PLUS))
         changeSFXVolume(VOLUME_UP);
     if (KEY_WAS_HIT(KEY_PAD_MINUS))
-        changeSFXVolume(VOLUME_DOWN);
+        changeSFXVolume(VOLUME_DOWN);*/
     if (KEY_WAS_HIT(KEY_F5))
     {
         quickSave();

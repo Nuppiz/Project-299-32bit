@@ -5,7 +5,7 @@
 #include "SRC/GENERAL/Def_math.h"
 #include "SRC/GFX/Draw.h"
 #include "SRC/GFX/Def_draw.h"
-#include "SRC/SOUND/Sound.h"
+//#include "SRC/SOUND/Sound.h"
 #include "SRC/SYS/Video.h"
 #include "SRC/SYS/Def_vid.h"
 #include "SRC/SYS/Str_sys.h"
@@ -63,14 +63,14 @@ int actorHitLoop(id_type source_id, Vec2 pos, int damage)
             actor->target_id_primary = source_id; // infighting mechanic
             if (actor->ai_mode != AI_CHASE) // if not yet fighting, fight!
                 actor->ai_mode = AI_CHASE;
-            if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
+            /*if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
             {
                 Timers.last_sfx = System.ticks;
                 if (actor->id == Game.player_id)
                     playSFX(SOUND_HURT);
                 else
                     playSFX(SOUND_HURT_E);
-            }
+            }*/
             #if DEBUG == 1
             if (System.debug_mode == TRUE)
             {
@@ -92,14 +92,14 @@ void actorHit(id_type source_id, int damage, Actor_t* actor)
     actor->target_id_primary = source_id; // infighting mechanic
     if (actor->ai_mode != AI_CHASE) // if not yet fighting, fight!
         actor->ai_mode = AI_CHASE;
-    if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
+    /*if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
     {
         Timers.last_sfx = System.ticks;
         if (actor->id == Game.player_id)
             playSFX(SOUND_HURT);
         else
             playSFX(SOUND_HURT_E);
-    }
+    }*/
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {
@@ -236,7 +236,7 @@ void createProjectile(id_type weapon_id, id_type source_id, Vec2 pos, double ang
 void projectileImpact(int index)
 {
     Projectile_t* projectile = &Projectiles[index];
-    playSFX(Effects[projectile->effect_id].sound_id);
+    //playSFX(Effects[projectile->effect_id].sound_id);
     spawnTempSprite(RUN_ONCE, STATIC_SPRITE, projectile->position, projectile->velocity, projectile->angle, &Explosion);
     deleteTempSprite(projectile->sprite_id);
     splashDamage(projectile->source_id, projectile->position, Effects[projectile->effect_id].damage, Effects[projectile->effect_id].radius);
@@ -296,7 +296,7 @@ void shootWeapon(int weapon_id, Actor_t* source)
     if (source->last_shot + weapon->shot_delay < System.ticks)
     {
         source->last_shot = System.ticks;
-        playSFX(weapon->sound_id);
+        //playSFX(weapon->sound_id);
         //particleFx(source->position, source->direction, FX_WATERGUN);
 
         projectile_loc.x = source->position.x + source->direction.x * (source->radius * 1.5);
@@ -326,19 +326,19 @@ void actorDeathLoop()
         {
             if (actor->id == Game.player_id)
             { 
-                playSFX(SOUND_DEATH);
+                //playSFX(SOUND_DEATH);
                 loadAfterDeath(Game.current_level_name);
             }       
             else if (actor->trigger_on_death != UINT16_MAX)
             {
-                playSFX(SOUND_DEATH_E);
+                //playSFX(SOUND_DEATH_E);
                 deathTrigger(i);
                 spawnCorpse(actor->position, actor->angle, -1);
                 deleteActor(actor->id);
             }
             else
             {
-                playSFX(SOUND_DEATH_E);
+                //playSFX(SOUND_DEATH_E);
                 spawnCorpse(actor->position, actor->angle, -1);
                 deleteActor(actor->id);
             }

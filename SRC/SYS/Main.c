@@ -1,6 +1,6 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/General.h"
-#include "SRC/SOUND/MIDAS/midasdll.h"
+//#include "SRC/SOUND/MIDAS/midasdll.h"
 #include "Init.h"
 #include "Input.h"
 #include "Keyb.h"
@@ -19,9 +19,7 @@ extern int stack_top;
 
 void quit()
 {
-    //gameExit();
     //deinitClock();
-    MIDASclose();
     quitInput();
     setVideoMode(TEXT_MODE);
 }
@@ -32,7 +30,6 @@ void updateStats()
     if (System.debug_mode == TRUE)
         sprintf(debug[DEBUG_FPS], "TIME: %ld MINS, %ld SECS\nTICKS: %ld, FRAMES: %ld\nFPS: %d, AVERAGE: %.2f",
             System.seconds/60, System.seconds%60, System.ticks, System.frames, System.fps, System.fps_avg);
-    //sprintf(debug[DEBUG_FPS], "BX=%u RC=%u T=%lu", setTimerBxHookBx, recomputeMidasTickRate, System.time);
     #endif
 }
 

@@ -25,8 +25,8 @@
 Menu_t* current_menu;
 extern unsigned musicVolume;
 extern unsigned SFXVolume;
-extern uint8_t music_on;
-extern uint8_t SFX_on;
+//extern uint8_t music_on;
+//extern uint8_t SFX_on;
 extern char levelname_global[];
 extern System_t System;
 extern Timer_t Timers;
@@ -54,10 +54,10 @@ Option_t mainmenu_options[] =
 
 Option_t settings_options[] =
 {
-    {"SFX",         optSfxToggle},
-    {"SFX VOL",     optSfxVolume},
-    {"MUSIC",       optMusicToggle},
-    {"MUSIC VOL",   optMusicVolume},
+    {"SFX",         dummy},
+    {"SFX VOL",     dummy},
+    {"MUSIC",       dummy},
+    {"MUSIC VOL",   dummy},
     {"KEY CONFIG",  menuKeyconf}
 };
 
@@ -308,7 +308,7 @@ void quitGame()
     System.running = 0;
 }
 
-void optSfxToggle()
+/*void optSfxToggle()
 {
     if (SFX_on == TRUE)
         SFX_on = FALSE;
@@ -342,7 +342,7 @@ void optMusicVolume()
     else
         music_on = TRUE;
     changeMenu(); // optimize later
-}
+}*/
 
 void dummy()
 {
