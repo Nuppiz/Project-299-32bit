@@ -8,6 +8,7 @@
 #include "SRC/GFX/Text.h"
 #include "SRC/GFX/Str_text.h"
 //#include "SRC/SOUND/Sound.h"
+#include "SRC/ALLEGRO/A_Sound.h"
 
 #include "Keyb.h"
 #include "Menu.h"
@@ -130,14 +131,15 @@ void testButtons()
     if (KEY_WAS_HIT(KEY_DELETE))
         deleteLastActor();
 
-    /*if (KEY_WAS_HIT(KEY_M))
+    if (KEY_WAS_HIT(KEY_M))
     {
-        if (music_on == TRUE)
+        /*if (music_on == TRUE)
             stopMusic();
         else
-            playMusic("MUSIC/PELIMUSA.S3M");        
+            playMusic("MUSIC/PELIMUSA.S3M");*/
+        playThatFunkyMusic();
     }
-
+    /*
     if (KEY_WAS_HIT(KEY_K))
         PLAYER_ACTOR.health = 10;
 

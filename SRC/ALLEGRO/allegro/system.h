@@ -16,8 +16,8 @@
  */
 
 
-#ifndef ALLEGRO_SYSTEM_H
-#define ALLEGRO_SYSTEM_H
+#ifndef SYSTEM_H
+#define SYSTEM_H
 
 #include "base.h"
 #include "unicode.h"
@@ -243,7 +243,7 @@ AL_ARRAY(_DRIVER_INFO, _system_driver_list);
 
 #ifdef __cplusplus
    }
-#endif
+#endif /* SYSTEM_H */
 
 #include "inline/system.inl"
 

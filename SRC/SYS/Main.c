@@ -1,3 +1,5 @@
+#include "SRC/Allegro/Allegro.h"
+#include "SRC/GENERAL/General.h"
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/General.h"
 //#include "SRC/SOUND/MIDAS/midasdll.h"
@@ -21,6 +23,7 @@ void quit()
 {
     //deinitClock();
     quitInput();
+    allegro_exit();
     setVideoMode(TEXT_MODE);
 }
 

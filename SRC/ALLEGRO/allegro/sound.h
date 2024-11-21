@@ -16,8 +16,8 @@
  */
 
 
-#ifndef ALLEGRO_SOUND_H
-#define ALLEGRO_SOUND_H
+#ifndef SOUND_H
+#define SOUND_H
 
 #include "base.h"
 #include "digi.h"
@@ -53,7 +53,7 @@ AL_FUNC(int, get_mixer_buffer_length, (void));
 
 #ifdef __cplusplus
    }
-#endif
+#endif /* SOUND_H */
 
 #endif          /* ifndef ALLEGRO_SOUND_H */
 

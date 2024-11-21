@@ -98,7 +98,6 @@ void sysTime()
 
 void timerInit()
 {
-    allegro_init();
     install_timer();
     install_int(sysTime, 1);
     /*old_Timer_ISR = _dos_getvect(TIME_KEEPER_INT);
@@ -175,12 +174,6 @@ void initWeapons()
 
 void otherInit()
 {
-    initInput();
-    printf("Keyboard OK\n");
-    if (detectMouse() == TRUE)
-    {
-        printf("Mouse detected\n");
-    }
     initSystem();
     printf("System init OK\n");
     if (!checkDirectoryExists("SAVES"))
@@ -204,10 +197,27 @@ void mainInit()
 {
     // sound
     //soundInit();
-    // timer
-    timerInit();
+    // Allegro library
+    allegro_init();
     // misc
     otherInit();
+    if (!checkFileExists("Allegro.cfg"))
+    {
+        setup_main();
+        install_int(sysTime, 1);
+    }
+    else
+    {
+        // timer
+        timerInit();
+    }
+    // input
+    initInput();
+    printf("Keyboard OK\n");
+    if (detectMouse() == TRUE)
+    {
+        printf("Mouse detected\n");
+    }
     // gfx
     gfxInit();
     printf("Init complete, launching...\n");

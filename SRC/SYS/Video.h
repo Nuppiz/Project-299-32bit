@@ -3,7 +3,7 @@
 
 #include "Str_vid.h"
 
-extern uint8_t* screen;
+extern uint8_t* game_screen;
 extern uint8_t far* screen_buf;
 
 int checkForVGA();

@@ -6,7 +6,7 @@
 
 /* Video mode and palette settings */
 
-uint8_t* screen;            /* this points to video memory. */
+uint8_t* game_screen;            /* this points to video memory. */
 uint8_t far* screen_buf;    // Double screen buffer
 Palette_t NewPalette;
 
@@ -35,7 +35,7 @@ void setVideoMode(uint8_t mode)
     regs.h.al = mode;
     int386(VIDEO_INT, &regs, &regs);
 
-    screen     = (uint8_t*)VGA;
+    game_screen = (uint8_t*)VGA;
     screen_buf = malloc(SCREEN_SIZE);
 }
 
@@ -86,7 +86,7 @@ void setPalette_VGA(Palette_t* pal)
 void render()
 {
     // copy off-screen buffer to VGA memory
-    memcpy(screen, screen_buf, SCREEN_SIZE);
+    memcpy(game_screen, screen_buf, SCREEN_SIZE);
 
     // clear off-screen buffer so the screen updates properly
     _fmemset(screen_buf, 0, SCREEN_SIZE);
@@ -95,5 +95,5 @@ void render()
 void renderWithoutClear()
 {     
     // copy off-screen buffer to VGA memory, don't clear buffer
-    memcpy(screen, screen_buf, SCREEN_SIZE);
+    memcpy(game_screen, screen_buf, SCREEN_SIZE);
 }

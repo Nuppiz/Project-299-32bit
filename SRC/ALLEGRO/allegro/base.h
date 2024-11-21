@@ -17,8 +17,8 @@
  */
 
 
-#ifndef ALLEGRO_BASE_H
-#define ALLEGRO_BASE_H
+#ifndef BASE_H
+#define BASE_H
 
 #ifndef ALLEGRO_NO_STD_HEADERS
    #include <errno.h>
@@ -56,7 +56,7 @@
 /*******************************************/
 
 #ifndef TRUE 
-   #define TRUE         -1
+   #define TRUE         1
    #define FALSE        0
 #endif
 
@@ -89,7 +89,7 @@ typedef struct _DRIVER_INFO         /* info about a hardware driver */
 
 #ifdef __cplusplus
    }
-#endif
+#endif /* BASE_H */
 
 #endif          /* ifndef ALLEGRO_BASE_H */
 
