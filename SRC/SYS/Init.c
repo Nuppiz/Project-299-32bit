@@ -19,7 +19,7 @@
 #include "Str_menu.h"
 #include "Str_sys.h"
 
-#include <allegro.h>
+#include "SRC/ALLEGRO/allegro.h"
 
 extern System_t System;
 extern Timer_t Timers;
