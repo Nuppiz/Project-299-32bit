@@ -44,7 +44,7 @@
 #endif
 
 #ifndef SETUP_TITLE
-   #define SETUP_TITLE           "Allegro Setup " ALLEGRO_VERSION_STR ", " ALLEGRO_PLATFORM_STR
+   #define SETUP_TITLE           "Allegro Setup for Project 299"//"Allegro Setup " ALLEGRO_VERSION_STR ", " ALLEGRO_PLATFORM_STR
 #endif
 
 #ifndef SETUP_CFG_FILE

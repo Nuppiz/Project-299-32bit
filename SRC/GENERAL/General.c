@@ -39,5 +39,4 @@ void quitError(char* string)
     setVideoMode(TEXT_MODE);
     printf("\nFatal error: %s", string);
     System.running = 0;
-    quit();
 }

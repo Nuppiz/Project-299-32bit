@@ -20,6 +20,7 @@
 #include "Str_sys.h"
 
 #include "SRC/ALLEGRO/allegro.h"
+#include "SRC/ALLEGRO/setup_f.h"
 
 extern System_t System;
 extern Timer_t Timers;
@@ -204,7 +205,7 @@ void mainInit()
     if (!checkFileExists("Allegro.cfg"))
     {
         setup_main();
-        install_int(sysTime, 1);
+        quitSetup(); // quit to make sure the config file is saved
     }
     else
     {

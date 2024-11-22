@@ -27,6 +27,15 @@ void quit()
     setVideoMode(TEXT_MODE);
 }
 
+void quitSetup()
+{
+    // exit from Allegro
+    allegro_exit();
+    setVideoMode(TEXT_MODE);
+    printf("Setup complete, run the game again to play!\n");
+    System.running = 0;
+}
+
 void updateStats()
 {
     #if DEBUG == 1
