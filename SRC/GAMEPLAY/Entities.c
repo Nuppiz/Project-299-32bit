@@ -70,10 +70,10 @@ void checkForInteractive() // temporary, will be replaced with better system lat
                 {
                     last_env_damage = System.ticks;
 
-                    /*if (actor->id == Game.player_id)
-                        playSFX(SOUND_HURT);
+                    if (actor->id == Game.player_id)
+                        AllegroPlaySFX(SOUND_HURT);
                     else
-                        playSFX(SOUND_HURT_E);*/
+                        AllegroPlaySFX(SOUND_HURT_E);
 
                     actor->health -= 10;
 
@@ -200,8 +200,8 @@ void useDoor(Entity_t* door, uint8_t use_mode)
         door->data.door.locked ^= 1;
         toggleDoor(door);
     }
-    /*else if (door->data.door.locked == TRUE && use_mode == USE_DIRECTLY)
-        playSFX(SOUND_LOCKED);*/
+    else if (door->data.door.locked == TRUE && use_mode == USE_DIRECTLY)
+        AllegroPlaySFX(SOUND_LOCKED);
     else if (door->data.door.locked == FALSE && door->state == 1)
     {
         AllegroPlaySFX(SOUND_DOOR_C);
