@@ -10,6 +10,8 @@
 #include "SRC/SYS/Def_vid.h"
 #include "SRC/SYS/Str_sys.h"
 
+#include "SRC/ALLEGRO/A_Sound.h"
+
 #include "Game.h"
 #include "Entities.h"
 #include "Movecoll.h"
@@ -236,7 +238,7 @@ void createProjectile(id_type weapon_id, id_type source_id, Vec2 pos, double ang
 void projectileImpact(int index)
 {
     Projectile_t* projectile = &Projectiles[index];
-    //playSFX(Effects[projectile->effect_id].sound_id);
+    AllegroPlaySFX(Effects[projectile->effect_id].sound_id);
     spawnTempSprite(RUN_ONCE, STATIC_SPRITE, projectile->position, projectile->velocity, projectile->angle, &Explosion);
     deleteTempSprite(projectile->sprite_id);
     splashDamage(projectile->source_id, projectile->position, Effects[projectile->effect_id].damage, Effects[projectile->effect_id].radius);
@@ -296,7 +298,7 @@ void shootWeapon(int weapon_id, Actor_t* source)
     if (source->last_shot + weapon->shot_delay < System.ticks)
     {
         source->last_shot = System.ticks;
-        //playSFX(weapon->sound_id);
+        AllegroPlaySFX(weapon->sound_id);
         //particleFx(source->position, source->direction, FX_WATERGUN);
 
         projectile_loc.x = source->position.x + source->direction.x * (source->radius * 1.5);
@@ -326,19 +328,19 @@ void actorDeathLoop()
         {
             if (actor->id == Game.player_id)
             { 
-                //playSFX(SOUND_DEATH);
+                AllegroPlaySFX(SOUND_DEATH);
                 loadAfterDeath(Game.current_level_name);
             }       
             else if (actor->trigger_on_death != UINT16_MAX)
             {
-                //playSFX(SOUND_DEATH_E);
+                AllegroPlaySFX(SOUND_DEATH_E);
                 deathTrigger(i);
                 spawnCorpse(actor->position, actor->angle, -1);
                 deleteActor(actor->id);
             }
             else
             {
-                //playSFX(SOUND_DEATH_E);
+                AllegroPlaySFX(SOUND_DEATH_E);
                 spawnCorpse(actor->position, actor->angle, -1);
                 deleteActor(actor->id);
             }

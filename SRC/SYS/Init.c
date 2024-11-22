@@ -20,6 +20,7 @@
 #include "Str_sys.h"
 
 #include "SRC/ALLEGRO/allegro.h"
+#include "SRC/ALLEGRO/A_Sound.h"
 #include "SRC/ALLEGRO/setup_f.h"
 
 extern System_t System;
@@ -205,7 +206,7 @@ void mainInit()
     if (!checkFileExists("Allegro.cfg"))
     {
         setup_main();
-        quitSetup(); // quit to make sure the config file is saved
+        System.running = 2; // quit to save config file
     }
     else
     {
@@ -221,6 +222,12 @@ void mainInit()
     }
     // gfx
     gfxInit();
+    if (AllegroInitSounds())
+    {
+        AllegroLoadMidi("MUSIC\\MMMENU.MID");
+        AllegroSFXInit();
+        AllegroPlayMidi();
+    }
     printf("Init complete, launching...\n");
 }
 

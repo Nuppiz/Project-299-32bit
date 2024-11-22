@@ -70,4 +70,7 @@
 #define VOLUME_DOWN         1
 #define VOLUME_UP           2
 
-#endif
+#define SFX_VOLUME          1
+#define MIDI_VOLUME         2
+
+#endif /* DEF_INP_H */

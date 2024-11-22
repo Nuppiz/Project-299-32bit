@@ -137,20 +137,19 @@ void testButtons()
             stopMusic();
         else
             playMusic("MUSIC/PELIMUSA.S3M");*/
-        playThatFunkyMusic();
+        AllegroPlayMidi();
     }
-    /*
     if (KEY_WAS_HIT(KEY_K))
         PLAYER_ACTOR.health = 10;
 
     if (KEY_WAS_HIT(KEY_PAGE_UP))
-        changeMusicVolume(VOLUME_UP);
+        AllegroChangeVolume(MIDI_VOLUME, VOLUME_UP);
     if (KEY_WAS_HIT(KEY_PAGE_DOWN))
-        changeMusicVolume(VOLUME_DOWN);
+        AllegroChangeVolume(MIDI_VOLUME, VOLUME_DOWN);
     if (KEY_WAS_HIT(KEY_PAD_PLUS))
-        changeSFXVolume(VOLUME_UP);
+        AllegroChangeVolume(SFX_VOLUME, VOLUME_UP);
     if (KEY_WAS_HIT(KEY_PAD_MINUS))
-        changeSFXVolume(VOLUME_DOWN);*/
+        AllegroChangeVolume(SFX_VOLUME, VOLUME_DOWN);
     if (KEY_WAS_HIT(KEY_F5))
     {
         quickSave();

@@ -25,15 +25,15 @@ void quit()
     quitInput();
     allegro_exit();
     setVideoMode(TEXT_MODE);
+    printf("Thanks for playing!\n");
 }
 
 void quitSetup()
 {
-    // exit from Allegro
+    // exit from Allegro setup
     allegro_exit();
     setVideoMode(TEXT_MODE);
     printf("Setup complete, run the game again to play!\n");
-    System.running = 0;
 }
 
 void updateStats()
@@ -172,6 +172,9 @@ void main()
         mainInit();
         pushState(STATE_TITLE);
         loop();
-        quit();
+        if (System.running == 0)
+            quit();
+        else if (System.running == 2)
+            quitSetup();
     }
 }

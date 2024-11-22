@@ -10,6 +10,8 @@
 #include "SRC/GFX/Text.h"
 #include "SRC/GFX/Def_draw.h"
 
+#include "SRC/ALLEGRO/A_Sound.h"
+
 #include "Input.h"
 #include "Keyb.h"
 #include "Menu.h"
@@ -301,6 +303,8 @@ void menuNewGame()
     Timers.last_sfx = 0;
     Timers.last_tick = 0;
     Timers.last_time = 0;
+
+    AllegroSwitchMidiTrack("MUSIC\\FASTWAY.MID");
 }
 
 void quitGame()

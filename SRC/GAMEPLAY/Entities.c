@@ -8,6 +8,8 @@
 //#include "SRC/SOUND/Sound.h"
 #include "SRC/SYS/Str_sys.h"
 
+#include "SRC/ALLEGRO/A_Sound.h"
+
 #include "Game.h"
 #include "Movecoll.h"
 #include "Def_ent.h"
@@ -41,7 +43,7 @@ void checkForItem() // might be replaced with better system later
                 {
                     key_acquired = TRUE;
                     item->state = 0;
-                    //playSFX(SOUND_ITEM);
+                    AllegroPlaySFX(SOUND_ITEM);
                 }
             }
         }
@@ -158,7 +160,7 @@ void runTrigger(Entity_t* entity)
     {
 
         trigger->last_trigger_time = System.ticks;
-        //playSFX(SOUND_DOOR_O);
+        AllegroPlaySFX(SOUND_DOOR_O);
         entity->state = 1;
         for (i = 0; i < 4; i++)
         {
@@ -194,7 +196,7 @@ void useDoor(Entity_t* door, uint8_t use_mode)
     }
     else if (door->data.door.locked == TRUE && use_mode == USE_DIRECTLY & key_acquired == TRUE)
     {
-        //playSFX(SOUND_DOOR_O);
+        AllegroPlaySFX(SOUND_DOOR_O);
         door->data.door.locked ^= 1;
         toggleDoor(door);
     }
@@ -202,12 +204,12 @@ void useDoor(Entity_t* door, uint8_t use_mode)
         playSFX(SOUND_LOCKED);*/
     else if (door->data.door.locked == FALSE && door->state == 1)
     {
-        //playSFX(SOUND_DOOR_C);
+        AllegroPlaySFX(SOUND_DOOR_C);
         toggleDoor(door);
     }
     else if (door->data.door.locked == FALSE && door->state == 0)
     {
-        //playSFX(SOUND_DOOR_O);
+        AllegroPlaySFX(SOUND_DOOR_O);
         toggleDoor(door);
     }
 }
@@ -259,7 +261,7 @@ void usePortal(Entity_t* entity)
 
     if (PLAYER_ACTOR.grid_loc.x == entity->x && PLAYER_ACTOR.grid_loc.y == entity->y && entity->state == 1)
     {
-        //playSFX(SOUND_PORTAL);
+        AllegroPlaySFX(SOUND_PORTAL);
         if (portal->level_name != NULL)
         {
             strcat(levelpath, portal->level_name);
@@ -316,7 +318,7 @@ void useTile(Vec2 pos, Vec2 dir)
         {
         case ENT_DOOR: useDoor(ent, USE_DIRECTLY);
             break;
-        case ENT_BUTTON: //playSFX(SOUND_SWITCH), toggleButton(ent);
+        case ENT_BUTTON: AllegroPlaySFX(SOUND_SWITCH), toggleButton(ent);
             break;
         }
     }
