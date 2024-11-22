@@ -65,14 +65,14 @@ int actorHitLoop(id_type source_id, Vec2 pos, int damage)
             actor->target_id_primary = source_id; // infighting mechanic
             if (actor->ai_mode != AI_CHASE) // if not yet fighting, fight!
                 actor->ai_mode = AI_CHASE;
-            /*if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
+            if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
             {
                 Timers.last_sfx = System.ticks;
                 if (actor->id == Game.player_id)
-                    playSFX(SOUND_HURT);
+                    AllegroPlaySFX(SOUND_HURT);
                 else
-                    playSFX(SOUND_HURT_E);
-            }*/
+                    AllegroPlaySFX(SOUND_HURT_E);
+            }
             #if DEBUG == 1
             if (System.debug_mode == TRUE)
             {
@@ -94,14 +94,14 @@ void actorHit(id_type source_id, int damage, Actor_t* actor)
     actor->target_id_primary = source_id; // infighting mechanic
     if (actor->ai_mode != AI_CHASE) // if not yet fighting, fight!
         actor->ai_mode = AI_CHASE;
-    /*if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
+    if (Timers.last_sfx + SFX_INTERVAL < System.ticks)
     {
         Timers.last_sfx = System.ticks;
         if (actor->id == Game.player_id)
-            playSFX(SOUND_HURT);
+            AllegroPlaySFX(SOUND_HURT);
         else
-            playSFX(SOUND_HURT_E);
-    }*/
+            AllegroPlaySFX(SOUND_HURT_E);
+    }
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {
