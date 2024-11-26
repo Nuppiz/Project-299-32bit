@@ -31,6 +31,7 @@ extern Weapon_t Weapons[];
 // test subjects, del later
 extern Sprite_t Rocket;
 extern Sprite_t Explosion;
+extern Texture_t RLETest;
 
 Vec2 camera_offset;
 
@@ -79,6 +80,61 @@ int boundaryCheck_Y(int y)
         return TRUE;
     else
         return FALSE;
+}
+
+void drawRLEGfx(int x, int y, Texture_t* texture)
+{
+    int pix_x = x;
+    int pix_y = y;
+    int index_y;
+    int index_x;
+    uint16_t file_index = 0;
+    uint8_t colour_count = 0;
+    uint8_t palette_index = 0;
+    int row_overflow;
+    int i;
+
+    if (texture->transparent == TRUE)
+    {
+        for (index_y = 0; index_y < texture->height; index_y++)
+        {
+            for (index_x = 0; index_x < texture->width; index_x += colour_count)
+            {
+                colour_count = texture->pixels[file_index];
+                palette_index = texture->pixels[file_index + 1];
+                if (palette_index != TRANSPARENT_COLOR)
+                {
+                    if (pix_x + colour_count < SCREEN_WIDTH && pix_y < SCREEN_HEIGHT)
+                    {
+                        for (i = 0; i < colour_count; i++)
+                        {
+                            SET_PIXEL(pix_x + i, pix_y, palette_index);
+                        }
+                        pix_x += colour_count;
+                        file_index += 2;
+                    }
+                    else
+                    {
+                        row_overflow = pix_x + colour_count - SCREEN_WIDTH;
+                        for (i = 0; i < colour_count - row_overflow; i++)
+                        {
+                            SET_PIXEL(pix_x + i, pix_y, palette_index);
+                        }
+                        pix_x += colour_count;
+                        file_index += 2;
+                        break;
+                    }
+                }
+                else
+                {
+                    file_index += 2;
+                    pix_x += colour_count;
+                }
+            }
+            pix_x = x;
+            pix_y++;
+        }
+    }
 }
 
 void drawTexture(int x, int y, Texture_t* texture)
@@ -1391,6 +1447,7 @@ void gameDraw()
         drawDebug();
     }
     #endif
+    drawRLEGfx(50, 50, &RLETest);
 }
 
 void pauseDraw()

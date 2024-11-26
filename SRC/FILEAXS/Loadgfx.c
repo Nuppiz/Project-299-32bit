@@ -45,12 +45,33 @@ Sprite_t DudeSprite = {SPRITE_IS_ANIM, 0, 0, 0, 5};
 
 AnimSet_t DudeAnimSet = {0};
 
+Texture_t RLETest;
+
 void loadGfx(char* filename, uint8_t* destination, uint16_t data_size)
 {
     // load raw graphics data (no dimensions and flags)
     FILE* file_ptr;
     file_ptr = fopen(filename, "rb");
     fread(destination, 1, data_size, file_ptr);
+    fclose(file_ptr);
+}
+
+void loadRLEGfx(char* filename, Texture_t* destination)
+{
+    // load RLE-compressed graphics
+    FILE* file_ptr;
+    int size;
+    file_ptr = fopen(filename, "rb");
+    fread(&destination->width, 2, 1, file_ptr); //uncompressed width
+    fseek(file_ptr, 2, SEEK_SET);
+    fread(&destination->height, 2, 1, file_ptr); //uncompressed height
+    fseek(file_ptr, 6, SEEK_SET);
+    fread(&destination->transparent, 2, 1, file_ptr);
+    fseek(file_ptr, 0, SEEK_END); // check current compressed file size by going to file end
+    size = ftell(file_ptr) - 8; // file header is 8 bytes, so remove that from the file size total
+	fseek(file_ptr, 8, SEEK_SET); // move back to start of pixel array
+    destination->pixels = malloc(size);
+    fread(destination->pixels, 1, size, file_ptr);
     fclose(file_ptr);
 }
 
@@ -169,6 +190,8 @@ void loadBaseTextures()
 {
     loadTexturesFromList("SPRITES/BASETEX.txt", &ObjectTextures);
     loadTexturesFromList("SPRITES/ACTORTEX.txt", &ObjectTextures);
+    loadRLEGfx("SPRITES/ROCKET11.7UP", &RLETest);
+    ASSERT(RLETest.pixels[0] == 9);
 }
 
 int loadAnimation(char* filename)
