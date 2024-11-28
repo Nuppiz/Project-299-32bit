@@ -31,7 +31,8 @@ extern Weapon_t Weapons[];
 // test subjects, del later
 extern Sprite_t Rocket;
 extern Sprite_t Explosion;
-extern Texture_t RLETest;
+extern RLETexture_t RLETest;
+extern RLETexture_t LargeRLETest;
 
 Vec2 camera_offset;
 
@@ -46,6 +47,8 @@ int corpse_write = 0;
 TempSprite_t TempSprites[MAX_TEMPSPRITES] = {0};
 int tempsprite_read = 0;
 int tempsprite_write = 0;
+
+void drawDebug();
 
 int boundaryCheck(int x, int y)
 {
@@ -82,58 +85,93 @@ int boundaryCheck_Y(int y)
         return FALSE;
 }
 
-void drawRLEGfx(int x, int y, Texture_t* texture)
+void drawRLEGfx(int x, int y, RLETexture_t* texture)
 {
     int pix_x = x;
     int pix_y = y;
     int index_y;
     int index_x;
-    uint16_t file_index = 0;
-    uint8_t colour_count = 0;
-    uint8_t palette_index = 0;
-    int row_overflow;
-    int i;
+    uint16_t file_index = 0; // current index in the data array that is being looked at
+    uint16_t pixel_count = 0; // amount of pixels to set in the same colour
+    uint8_t palette_index = 0; // palette index of the colour being set
+    uint8_t pixel_count_jump = 2; // amount of bytes to jump in the data array for the next pixel count
+    uint8_t palette_index_jump = 1; // amount of bytes to jump in the data array for the next pixel count
+    uint16_t row_overflow = 0; // RLE compression doesn't have the original bitmap rows, so this is the amount of pixels moving to the next row
 
-    if (texture->transparent == TRUE)
+    // with larger files the pixel count spans two bytes
+    if ((texture->flags & TEXTURE_FLAGS_LARGE_RLE))
     {
-        for (index_y = 0; index_y < texture->height; index_y++)
+        pixel_count_jump = 3;
+        palette_index_jump = 2;
+    }
+
+    for (index_y = 0; index_y < texture->height; index_y++)
+    {
+        for (index_x = 0; index_x < texture->width; index_x += pixel_count)
         {
-            for (index_x = 0; index_x < texture->width; index_x += colour_count)
+            // fetch pixel count and palette index from the data
+            if ((texture->flags & TEXTURE_FLAGS_LARGE_RLE))
             {
-                colour_count = texture->pixels[file_index];
-                palette_index = texture->pixels[file_index + 1];
-                if (palette_index != TRANSPARENT_COLOR)
-                {
-                    if (pix_x + colour_count < SCREEN_WIDTH && pix_y < SCREEN_HEIGHT)
-                    {
-                        for (i = 0; i < colour_count; i++)
-                        {
-                            SET_PIXEL(pix_x + i, pix_y, palette_index);
-                        }
-                        pix_x += colour_count;
-                        file_index += 2;
-                    }
-                    else
-                    {
-                        row_overflow = pix_x + colour_count - SCREEN_WIDTH;
-                        for (i = 0; i < colour_count - row_overflow; i++)
-                        {
-                            SET_PIXEL(pix_x + i, pix_y, palette_index);
-                        }
-                        pix_x += colour_count;
-                        file_index += 2;
-                        break;
-                    }
-                }
+                pixel_count = (texture->pixels[file_index + 1] << 8) | texture->pixels[file_index];
+            }
+            else
+            {
+                pixel_count = texture->pixels[file_index];
+            }
+            palette_index = texture->pixels[file_index + palette_index_jump];
+            // draw pixels on screen if they're not set to transparent
+            if (palette_index != TRANSPARENT_COLOR)
+            {
+                // if all pixels fit on the current row, draw them right away
+                if (index_x + pixel_count <= texture->width)
+                    _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
+                // else calculate how many pixels won't fit on the current row, and only draw the ones that fit
                 else
                 {
-                    file_index += 2;
-                    pix_x += colour_count;
+                    row_overflow = index_x + pixel_count - texture->width;
+                    _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count - row_overflow);
+                }
+                // move starting X coordinate by the amount we drew pixels, and jump to next pixel count
+                pix_x += pixel_count;
+                file_index += pixel_count_jump;
+            }
+            // with transparent pixels we skip drawing and just calculate possible row overflows
+            else
+            {
+                if (index_x + pixel_count > texture->width)
+                    row_overflow = index_x + pixel_count - texture->width;
+                pix_x += pixel_count;
+                file_index += pixel_count_jump;
+            }
+
+            // if there are pixels left over from the previous row(s), process them until we reach 0 leftovers
+            while (row_overflow > 0)
+            {
+                // reset X coordinate and index and advance to the next row in memory
+                index_x = 0;
+                pix_x = x;
+                index_y++, pix_y++;
+
+                pixel_count = row_overflow;
+                // if all leftover pixels fit on the current row, draw them on the screen (if not transparent) and kill the while loop
+                if (index_x + pixel_count <= texture->width)
+                {
+                    if (palette_index != TRANSPARENT_COLOR)
+                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
+                    row_overflow = 0;
+                    index_x, pix_x += pixel_count;
+                }
+                // else continue decrementing the leftover pixels and advancing rows until we reach 0
+                else
+                {
+                    row_overflow -= texture->width;
+                    if (palette_index != TRANSPARENT_COLOR)
+                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, row_overflow);
                 }
             }
-            pix_x = x;
-            pix_y++;
         }
+        pix_x = x;
+        pix_y++;
     }
 }
 
@@ -145,7 +183,7 @@ void drawTexture(int x, int y, Texture_t* texture)
     int index_y;
     int i = 0;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < texture->height; index_y++)
         {
@@ -286,7 +324,7 @@ void drawTexturePartial(int x, int y, Texture_t* texture)
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < clip_y; index_y++)
         {
@@ -377,8 +415,8 @@ void drawTextureRotated(int x, int y, double angle, Texture_t* source, uint8_t b
         rotated.width = abs(source->height * sin(angle)) + abs(source->width * cos(angle)) + 5;
         rotated.height = abs(source->width * sin(angle)) + abs(source->height * cos(angle)) + 5;
 
-    if (source->transparent == TRUE)
-        rotated.transparent = TRUE;
+    if ((source->flags & TEXTURE_FLAGS_TRANSPARENCY))
+        rotated.flags |= (TEXTURE_FLAGS_TRANSPARENCY);
 
     rotated.offset_x = (rotated.width - source->width) / 2;
     rotated.offset_y = (rotated.height - source->height) / 2;
@@ -510,8 +548,8 @@ RotatedTexture_t saveRotatedTexture(double angle, Texture_t* source, uint8_t bgc
         rotated.width = abs(source->height * sin(angle)) + abs(source->width * cos(angle)) + 5;
         rotated.height = abs(source->width * sin(angle)) + abs(source->height * cos(angle)) + 5;
 
-    if (source->transparent == TRUE)
-        rotated.transparent = TRUE;
+    if ((source->flags & TEXTURE_FLAGS_TRANSPARENCY))
+        rotated.flags |= (TEXTURE_FLAGS_TRANSPARENCY);
 
     rotated.offset_x = (rotated.width - source->width) / 2;
     rotated.offset_y = (rotated.height - source->height) / 2;
@@ -610,7 +648,7 @@ void drawPrerotatedTexture(int x, int y, RotatedTexture_t* texture)
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < clip_y; index_y++)
         {
@@ -1325,8 +1363,6 @@ void drawActors()
     }
 }
 
-void drawDebug();
-
 void drawHealth()
 {
     char plr_health[10];
@@ -1439,15 +1475,16 @@ void gameDraw()
     //rocketPrecacheTest();
     particleArrayManager();
     tempSpriteArrayManager();
+    //drawRLEGfx(0, 0, &LargeRLETest);
+    drawRLEGfx(50, 50, &RLETest);
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {
-        sprintf(debug[DEBUG_DRAW], "ANIM: %d", PLAYER_ACTOR.sprite.anim_id);
-        sprintf(debug[DEBUG_DRAW], "TS: %f", TempSprites[tempsprite_write - 1].angle);
+        //sprintf(debug[DEBUG_DRAW], "ANIM: %d", PLAYER_ACTOR.sprite.anim_id);
+        //sprintf(debug[DEBUG_DRAW], "TS: %f", TempSprites[tempsprite_write - 1].angle);
         drawDebug();
     }
     #endif
-    drawRLEGfx(50, 50, &RLETest);
 }
 
 void pauseDraw()

@@ -45,7 +45,8 @@ Sprite_t DudeSprite = {SPRITE_IS_ANIM, 0, 0, 0, 5};
 
 AnimSet_t DudeAnimSet = {0};
 
-Texture_t RLETest;
+RLETexture_t RLETest;
+RLETexture_t LargeRLETest;
 
 void loadGfx(char* filename, uint8_t* destination, uint16_t data_size)
 {
@@ -56,19 +57,20 @@ void loadGfx(char* filename, uint8_t* destination, uint16_t data_size)
     fclose(file_ptr);
 }
 
-void loadRLEGfx(char* filename, Texture_t* destination)
+void loadRLEGfx(char* filename, RLETexture_t* destination)
 {
     // load RLE-compressed graphics
     FILE* file_ptr;
     int size;
     file_ptr = fopen(filename, "rb");
-    fread(&destination->width, 2, 1, file_ptr); //uncompressed width
+    fread(&destination->width, 2, 1, file_ptr); // uncompressed width
     fseek(file_ptr, 2, SEEK_SET);
-    fread(&destination->height, 2, 1, file_ptr); //uncompressed height
+    fread(&destination->height, 2, 1, file_ptr); // uncompressed height
     fseek(file_ptr, 6, SEEK_SET);
-    fread(&destination->transparent, 2, 1, file_ptr);
+    fread(&destination->flags, 2, 1, file_ptr);
     fseek(file_ptr, 0, SEEK_END); // check current compressed file size by going to file end
     size = ftell(file_ptr) - 8; // file header is 8 bytes, so remove that from the file size total
+    destination->size = size;
 	fseek(file_ptr, 8, SEEK_SET); // move back to start of pixel array
     destination->pixels = malloc(size);
     fread(destination->pixels, 1, size, file_ptr);
@@ -149,7 +151,7 @@ int loadTexture(char* filename, Texture_array* array)
     fseek(file_ptr, 2, SEEK_SET);
     fread(&array->textures[texture_id].height, 2, 1, file_ptr);
     fseek(file_ptr, 6, SEEK_SET);
-    fread(&array->textures[texture_id].transparent, 2, 1, file_ptr);
+    fread(&array->textures[texture_id].flags, 2, 1, file_ptr);
 	fseek(file_ptr, 8, SEEK_SET);
     array->textures[texture_id].pixels = malloc(array->textures[texture_id].width * array->textures[texture_id].height);
     fread(array->textures[texture_id].pixels, 1, array->textures[texture_id].width * array->textures[texture_id].height, file_ptr);
@@ -191,7 +193,7 @@ void loadBaseTextures()
     loadTexturesFromList("SPRITES/BASETEX.txt", &ObjectTextures);
     loadTexturesFromList("SPRITES/ACTORTEX.txt", &ObjectTextures);
     loadRLEGfx("SPRITES/ROCKET11.7UP", &RLETest);
-    ASSERT(RLETest.pixels[0] == 9);
+    loadRLEGfx("SPRITES/HELP2.7UP", &LargeRLETest);
 }
 
 int loadAnimation(char* filename)

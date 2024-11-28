@@ -1,6 +1,8 @@
 #ifndef DEF_DRAW_H
 #define DEF_DRAW_H
 
+#include "SRC/SYS/Def_bit.h"
+
 /* Defines related to drawing functions */
 
 #if SCREEN_WIDTH == 320
@@ -36,5 +38,8 @@
 #define COLOUR_YELLOW       160
 #define COLOUR_BLUE         200
 #define TRANSPARENT_COLOR   251
+
+#define TEXTURE_FLAGS_TRANSPARENCY  BIT_0
+#define TEXTURE_FLAGS_LARGE_RLE     BIT_1
 
 #endif
