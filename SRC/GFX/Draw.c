@@ -112,7 +112,7 @@ void drawRLEGfx(int x, int y, RLETexture_t* texture)
             // fetch pixel count and palette index from the data
             if ((texture->flags & TEXTURE_FLAGS_LARGE_RLE))
             {
-                pixel_count = (texture->pixels[file_index + 1] << 8) | texture->pixels[file_index];
+                pixel_count = (texture->pixels[file_index + 1] << 8) | texture->pixels[file_index]; // combine the to 8-bit values into one 16-bit
             }
             else
             {
@@ -145,6 +145,7 @@ void drawRLEGfx(int x, int y, RLETexture_t* texture)
             }
 
             // if there are pixels left over from the previous row(s), process them until we reach 0 leftovers
+            // this should only happen if the files were converted without maintaining row data
             while (row_overflow > 0)
             {
                 // reset X coordinate and index and advance to the next row in memory
@@ -169,6 +170,7 @@ void drawRLEGfx(int x, int y, RLETexture_t* texture)
                         _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, row_overflow);
                 }
             }
+
         }
         pix_x = x;
         pix_y++;
@@ -1476,7 +1478,7 @@ void gameDraw()
     particleArrayManager();
     tempSpriteArrayManager();
     //drawRLEGfx(0, 0, &LargeRLETest);
-    drawRLEGfx(50, 50, &RLETest);
+    //drawRLEGfx(50, 50, &RLETest);
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {
