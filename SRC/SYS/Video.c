@@ -1,5 +1,6 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/Def_wat.h"
+#include "SRC/SYS/Str_sys.h"
 
 #include "Def_vid.h"
 #include "Str_vid.h"
@@ -7,12 +8,15 @@
 /* Video mode and palette settings */
 
 uint8_t* game_screen;            /* this points to video memory. */
-uint8_t far* screen_buf;    // Double screen buffer
+uint8_t far* screen_buf;        // Double screen buffer for mode 13h
+uint8_t far* ModeX_buf[4];      // Double screen buffer for mode X
 Palette_t NewPalette;
+
+extern System_t System;
 
 int checkForVGA()
 {
-    // uses the VGA/MCGA specific VIDEO_INT function 1A to determine the video adapter
+    // uses the VGA/MCGA specific VIDEO_INT BIOS function 1A to determine the video adapter
     // this function is absent in older video systems, so it should return an error anyway
     // finally, the regs.h.bl check also filters out MCGA (the game resolution is screwed up in MCGA)
 
@@ -36,7 +40,6 @@ void setVideoMode(uint8_t mode)
     int386(VIDEO_INT, &regs, &regs);
 
     game_screen = (uint8_t*)VGA;
-    screen_buf = malloc(SCREEN_SIZE);
 }
 
 // loads the palette from a 256-colour bitmap file
@@ -83,17 +86,69 @@ void setPalette_VGA(Palette_t* pal)
     }
 }
 
-void render()
+void initMode13h()
+{
+    // allocate memory for mode 13h double buffer, set the system variable for screen height and load in the palette
+    screen_buf = malloc(SCREEN_SIZE_13H);
+    System.screen_height = SCREEN_HEIGHT_13H;
+    loadPalette("Pal.bmp", &NewPalette);
+    setPalette_VGA(&NewPalette);
+}
+
+void setModeX()
+{
+    int plane;
+
+    outpw(SC_INDEX, 0x0604); // chain 4 off
+    outpw(CRTC_INDEX, 0xE317); // word mode off (byte mode)
+    outpw(CRTC_INDEX, 0x0014); // long mode off (byte mode)
+    
+    outp(MISC_OUTPUT, 0xE3); // vertical sync polarity
+    outpw(CRTC_INDEX, 0x2C11); // write protect off
+    outpw(CRTC_INDEX, 0x0D06); // vertical total
+    outpw(CRTC_INDEX, 0x3E07); // overflow register
+    outpw(CRTC_INDEX, 0xEA10); // vertical retrace start
+    outpw(CRTC_INDEX, 0xAC11); // vertical retrace end, protect
+    outpw(CRTC_INDEX, 0xDF12); // vertical display enable end
+    outpw(CRTC_INDEX, 0xE715); // start vertical blanking
+    outpw(CRTC_INDEX, 0x0616); // end vertical blanking
+
+    // free the mode 13h screen buffer
+    free(&screen_buf);
+
+    // allocate memory for mode X screen buffer and set the system variable for screen height
+    // since mode X uses planar memory, the buffer memory must be allocated in four planes
+    for (plane = 0; plane < 4; plane++)
+    {
+        ModeX_buf[plane] = malloc(PLANE_SIZE_X);
+        _fmemset(ModeX_buf[plane], 0, PLANE_SIZE_X);
+    }
+    System.screen_height = SCREEN_HEIGHT_X;
+}
+
+void render13h()
 {
     // copy off-screen buffer to VGA memory
-    memcpy(game_screen, screen_buf, SCREEN_SIZE);
+    memcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
 
     // clear off-screen buffer so the screen updates properly
-    _fmemset(screen_buf, 0, SCREEN_SIZE);
+    _fmemset(screen_buf, 0, SCREEN_SIZE_13H);
 }
 
 void renderWithoutClear()
 {     
     // copy off-screen buffer to VGA memory, don't clear buffer
-    memcpy(game_screen, screen_buf, SCREEN_SIZE);
+    memcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
+}
+
+void renderModeX()
+{
+    int plane;
+
+    for (plane = 0; plane < 4; plane++)
+    {
+        outpw(SC_INDEX, (0x0100 << plane) | 0x02); // select plane
+        memcpy(game_screen, ModeX_buf[plane], PLANE_SIZE_X);
+        _fmemset(ModeX_buf[plane], 0, PLANE_SIZE_X);
+    }
 }

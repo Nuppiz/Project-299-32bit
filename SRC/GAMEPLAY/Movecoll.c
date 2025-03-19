@@ -149,9 +149,9 @@ void edgeDetectActor(Actor_t* actor)
         actor->position.y = 0 + actor->radius;
         actor->velocity.y = 0.0;
     }
-    else if (actor->position.y + actor->radius >= (SCREEN_HEIGHT - 1)) // bottom edge
+    else if (actor->position.y + actor->radius >= (System.screen_height - 1)) // bottom edge
     {
-        actor->position.y = (SCREEN_HEIGHT - 1) - actor->radius;
+        actor->position.y = (System.screen_height - 1) - actor->radius;
         actor->velocity.y = 0.0;
     }
 }

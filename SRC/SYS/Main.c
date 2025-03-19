@@ -109,7 +109,10 @@ void drawStates()
 void renderFrame()
 {
     drawStates();
-    render();
+    if (System.screen_height == SCREEN_HEIGHT_13H)
+        render13h();
+    else
+        renderModeX();
 
     System.frames++;
     Timers.frame_count++;

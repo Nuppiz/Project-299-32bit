@@ -37,6 +37,7 @@ uint8_t error_pixels[400] =
 
 Texture_array ObjectTextures = {0};
 Texture_array TileTextures = {0};
+PlanarTexture_array PlanarTileTextures = {0};
 Anim_array Animations = {0};
 
 Sprite_t Rocket = {SPRITE_IS_ANIM, 0, 0, 0, 3};
@@ -78,6 +79,18 @@ void loadRLEGfx(char* filename, RLETexture_t* destination)
 }
 
 int findTexture(char* filename, Texture_array* array)
+{
+    int i;
+
+    for (i = 0; i < array->texture_count; i++)
+    {
+        if (strcmp(filename, array->textures[i].filename) == 0)
+            return i;
+    }
+    return 0;
+}
+
+int findPlanarTexture(char* filename, PlanarTexture_array* array)
 {
     int i;
 
@@ -155,6 +168,64 @@ int loadTexture(char* filename, Texture_array* array)
 	fseek(file_ptr, 8, SEEK_SET);
     array->textures[texture_id].pixels = malloc(array->textures[texture_id].width * array->textures[texture_id].height);
     fread(array->textures[texture_id].pixels, 1, array->textures[texture_id].width * array->textures[texture_id].height, file_ptr);
+    array->textures[texture_id].offset_x = 0;
+    array->textures[texture_id].offset_y = 0;
+
+    fclose(file_ptr);
+    
+    return texture_id;
+}
+
+int loadPlanarTexture(char* filename, PlanarTexture_array* array)
+{
+    int texture_id = 0;
+    int filename_length, plane, x;
+    long index;
+    FILE* file_ptr;
+
+    //loop all textures here to check if it was already loaded,
+    //return id of that texture if it was found.
+
+    if ((texture_id = findPlanarTexture(filename, array)) != 0)
+        return texture_id;
+
+    file_ptr = fopen(filename, "rb");
+    if (file_ptr == NULL)
+    {
+        printf("Unable to open file %s!\n", filename);
+        return 0;
+    }
+
+    array->textures = realloc(array->textures, (array->texture_count + 1) * sizeof(PlanarTexture_t));
+
+    ASSERT(array->textures != NULL);
+
+    texture_id = array->texture_count;
+    array->texture_count++;
+
+    filename_length = strlen(filename) + 1;
+    array->textures[texture_id].filename = malloc(filename_length);
+    strcpy(array->textures[texture_id].filename, filename);
+
+    fread(&array->textures[texture_id].width, 2, 1, file_ptr);
+    fseek(file_ptr, 2, SEEK_SET);
+    fread(&array->textures[texture_id].height, 2, 1, file_ptr);
+    fseek(file_ptr, 6, SEEK_SET);
+    fread(&array->textures[texture_id].flags, 2, 1, file_ptr);
+	fseek(file_ptr, 8, SEEK_SET);
+    // allocate memory
+    for (plane = 0; plane < 4; plane++)
+    {
+        array->textures[texture_id].pixels[plane] = (uint8_t *) malloc((uint16_t)((array->textures[texture_id].width * array->textures[texture_id].height)>>2));
+    }
+    // read data in planar form
+    for (index = (array->textures[texture_id].height - 1) * array->textures[texture_id].width; index >= 0; index -= array->textures[texture_id].width)
+    {
+        for (x = 0; x < array->textures[texture_id].width; x++)
+        {
+            array->textures[texture_id].pixels[x&3][(int)((index + x)>>2)] = (uint8_t)fgetc(file_ptr);
+        }
+    }
     array->textures[texture_id].offset_x = 0;
     array->textures[texture_id].offset_y = 0;
 

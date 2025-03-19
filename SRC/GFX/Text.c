@@ -5,15 +5,19 @@
 #include "SRC/SYS/Def_vid.h"
 #include "SRC/SYS/Str_inp.h"
 #include "SRC/SYS/Str_menu.h"
+#include "SRC/SYS/Str_sys.h"
 
 #include "Def_draw.h"
 #include "Def_text.h"
 #include "Str_text.h"
 
+#include "Draw.h"
+
 /* Text input, output and drawing functions */
 
 extern Menu_t* current_menu;
 extern Input_t g_Input;
+extern System_t System;
 uint8_t alphabet [FONT_FILE_SIZE]; // Array to hold the typeface graphics
 
 void loadFont()
@@ -45,7 +49,10 @@ void drawSymbol(int x, int y, int symbol_index, uint8_t color)
         {
             if (alphabet[symbol_index] != TRANSPARENT_COLOR)
             {
-                SET_PIXEL(x, y, alphabet[symbol_index] + color);
+                if (System.screen_height == SCREEN_HEIGHT_13H)
+                    SET_PIXEL(x, y, alphabet[symbol_index] + color);
+                else
+                    setPixelModeX(x, y, alphabet[symbol_index] + color);
                 symbol_index++;
                 x++;
             }
@@ -146,7 +153,7 @@ int drawTextClipped(int x, int y, char* string, uint8_t color)
     int start_x = x;
     char c;
 
-    if (x < 0 || x > SCREEN_WIDTH - 10 || y < 0 || y > SCREEN_HEIGHT - 10)
+    if (x < 0 || x > SCREEN_WIDTH - 10 || y < 0 || y > System.screen_height - 10)
         return 0;
 
     while ((c = string[i++]) != 0)
@@ -157,7 +164,7 @@ int drawTextClipped(int x, int y, char* string, uint8_t color)
             y += 10;
             newlines++;
             
-            if (y > SCREEN_HEIGHT - 10)
+            if (y > System.screen_height - 10)
                 return 0;
 
             continue;

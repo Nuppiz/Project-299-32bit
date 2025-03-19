@@ -109,8 +109,6 @@ void timerInit()
 
 void gfxInit()
 {
-    extern Palette_t NewPalette;
-
 	printf("Initializing graphics...\n");
     loadFontNew();
     printf("Font loaded\n");
@@ -121,11 +119,8 @@ void gfxInit()
     makeAnimset();
     printf("Basic textures loaded into memory\n");
     setVideoMode(VGA_256_COLOR_MODE);
-    printf("Video mode OK\n");
-    loadPalette("Pal.bmp", &NewPalette);
-    printf("Palette loaded\n");
-    setPalette_VGA(&NewPalette);
-    printf("Palette set\n");
+    initMode13h();
+    printf("Video init OK\n");
     printf("Graphics init OK\n");
     //setVideoMode(TEXT_MODE);
 }

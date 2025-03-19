@@ -19,6 +19,22 @@ typedef struct
 typedef struct
 {
     char* filename;
+    uint8_t* pixels[4];
+    uint16_t width, height;
+    flags_t flags;
+    uint8_t material_type;
+    int offset_x, offset_y;
+} PlanarTexture_t;
+
+typedef struct
+{
+    PlanarTexture_t* textures;
+    int texture_count;
+} PlanarTexture_array;
+
+typedef struct
+{
+    char* filename;
     uint8_t* pixels;
     uint16_t width, height; // original uncompressed dimensions
     uint16_t size; // compressed size for drawing routines

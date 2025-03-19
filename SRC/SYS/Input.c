@@ -9,6 +9,7 @@
 #include "SRC/GFX/Str_text.h"
 //#include "SRC/SOUND/Sound.h"
 #include "SRC/ALLEGRO/A_Sound.h"
+#include "SRC/SYS/Video.h"
 
 #include "Keyb.h"
 #include "Menu.h"
@@ -167,6 +168,16 @@ void testButtons()
         else
             System.debug_mode = FALSE;
     }
+    if (KEY_WAS_HIT(KEY_X) && KEY_WAS_HIT(KEY_V))
+    {
+        if (System.screen_height == 200)
+            setModeX();
+        else
+        {
+            setVideoMode(0x13);
+            initMode13h();
+        }
+    }
     #endif
 }
 
@@ -218,6 +229,17 @@ void titleInput()
     {
         popState();
         pushState(STATE_MENU_MAIN);
+    }
+
+    if (KEY_WAS_HIT(KEY_X) && KEY_WAS_HIT(KEY_V))
+    {
+        if (System.screen_height == 200)
+            setModeX();
+        else
+        {
+            setVideoMode(0x13);
+            initMode13h();
+        }
     }
     
     // F10 always exits, wherever you are
