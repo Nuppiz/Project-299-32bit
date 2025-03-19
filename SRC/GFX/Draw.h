@@ -6,6 +6,7 @@
 #include "Str_draw.h"
 
 int boundaryCheck(int x, int y);
+void setPixelModeX(int x, int y, uint8_t color);
 void drawTexture(int x, int y, Texture_t* texture);
 int calculateRotatedTextureSize(double angle, Texture_t* source);
 RotatedTexture_t saveRotatedTexture(double angle, Texture_t* source, uint8_t bgcolor);

@@ -3,7 +3,6 @@
 #include "SRC/FILEAXS/Loadgfx.h"
 #include "SRC/GAMEPLAY/Game.h"
 #include "SRC/GFX/Draw.h"
-#include "SRC/SOUND/Sound.h"
 
 #include "Def_ste.h"
 #include "Str_sys.h"
@@ -12,7 +11,7 @@
 
 extern State_t States[];
 extern System_t System;
-extern uint8_t music_on;
+//extern uint8_t music_on;
 
 void titleExit()
 {
@@ -26,8 +25,8 @@ void menuExit()
 
 void gameExit()
 {
-    if (music_on == TRUE)
-        stopMusic();
+    /*if (music_on == TRUE)
+        stopMusic();*/
     freeAllEntities();
     freeAllTextures();
     emptyCorpseArray();

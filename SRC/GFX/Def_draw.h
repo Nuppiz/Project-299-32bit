@@ -1,6 +1,8 @@
 #ifndef DEF_DRAW_H
 #define DEF_DRAW_H
 
+#include "SRC/SYS/Def_bit.h"
+
 /* Defines related to drawing functions */
 
 #if SCREEN_WIDTH == 320
@@ -10,9 +12,9 @@
 #endif
 
 #if SCREEN_WIDTH == 320
-#define SET_PIXEL_VGA(x,y,color) screen[(((y)<<8)+((y)<<6)) + (x)] = color
+#define SET_PIXEL_VGA(x,y,color) game_screen[(((y)<<8)+((y)<<6)) + (x)] = color
 #else
-#define SET_PIXEL_VGA(x,y,color) screen[(y)*SCREEN_WIDTH + (x)] = color
+#define SET_PIXEL_VGA(x,y,color) game_screen[(y)*SCREEN_WIDTH + (x)] = color
 #endif
 
 #define DOT_DISTANCE        30
@@ -36,5 +38,9 @@
 #define COLOUR_YELLOW       160
 #define COLOUR_BLUE         200
 #define TRANSPARENT_COLOR   251
+
+#define TEXTURE_FLAGS_TRANSPARENCY  BIT_0
+#define TEXTURE_FLAGS_LARGE_RLE     BIT_1
+#define TEXTURE_FLAGS_ROWED_RLE     BIT_2
 
 #endif

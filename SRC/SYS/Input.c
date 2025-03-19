@@ -7,7 +7,9 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GFX/Text.h"
 #include "SRC/GFX/Str_text.h"
-#include "SRC/SOUND/Sound.h"
+//#include "SRC/SOUND/Sound.h"
+#include "SRC/ALLEGRO/A_Sound.h"
+#include "SRC/SYS/Video.h"
 
 #include "Keyb.h"
 #include "Menu.h"
@@ -23,7 +25,7 @@ extern System_t System;
 extern State_t States[];
 extern GameData_t Game;
 extern Input_t g_Input;
-extern uint8_t music_on;
+//extern uint8_t music_on;
 extern Menu_t* current_menu;
 extern Menu_t ingamemenu;
 extern Weapon_t Weapons[];
@@ -132,23 +134,23 @@ void testButtons()
 
     if (KEY_WAS_HIT(KEY_M))
     {
-        if (music_on == TRUE)
+        /*if (music_on == TRUE)
             stopMusic();
         else
-            playMusic("MUSIC/PELIMUSA.S3M");        
+            playMusic("MUSIC/PELIMUSA.S3M");*/
+        AllegroPlayMidi();
     }
-
     if (KEY_WAS_HIT(KEY_K))
         PLAYER_ACTOR.health = 10;
 
     if (KEY_WAS_HIT(KEY_PAGE_UP))
-        changeMusicVolume(VOLUME_UP);
+        AllegroChangeVolume(MIDI_VOLUME, VOLUME_UP);
     if (KEY_WAS_HIT(KEY_PAGE_DOWN))
-        changeMusicVolume(VOLUME_DOWN);
+        AllegroChangeVolume(MIDI_VOLUME, VOLUME_DOWN);
     if (KEY_WAS_HIT(KEY_PAD_PLUS))
-        changeSFXVolume(VOLUME_UP);
+        AllegroChangeVolume(SFX_VOLUME, VOLUME_UP);
     if (KEY_WAS_HIT(KEY_PAD_MINUS))
-        changeSFXVolume(VOLUME_DOWN);
+        AllegroChangeVolume(SFX_VOLUME, VOLUME_DOWN);
     if (KEY_WAS_HIT(KEY_F5))
     {
         quickSave();
@@ -165,6 +167,16 @@ void testButtons()
             System.debug_mode = TRUE;
         else
             System.debug_mode = FALSE;
+    }
+    if (KEY_WAS_HIT(KEY_X) && KEY_WAS_HIT(KEY_V))
+    {
+        if (System.screen_height == 200)
+            setModeX();
+        else
+        {
+            setVideoMode(0x13);
+            initMode13h();
+        }
     }
     #endif
 }
@@ -217,6 +229,17 @@ void titleInput()
     {
         popState();
         pushState(STATE_MENU_MAIN);
+    }
+
+    if (KEY_WAS_HIT(KEY_X) && KEY_WAS_HIT(KEY_V))
+    {
+        if (System.screen_height == 200)
+            setModeX();
+        else
+        {
+            setVideoMode(0x13);
+            initMode13h();
+        }
     }
     
     // F10 always exits, wherever you are

@@ -7,18 +7,21 @@
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/General.h"
 #include "SRC/GFX/Text.h"
-#include "SRC/SOUND/Sound.h"
-#include "SRC/SOUND/MIDAS/midasdll.h"
 
+#include "Dpmi.h"
 #include "Keyb.h"
 #include "Menu.h"
 #include "Mouse.h"
-#include "Patch.h"
 #include "Video.h"
 #include "Def_ste.h"
+#include "Def_time.h"
 #include "Def_vid.h"
 #include "Str_menu.h"
 #include "Str_sys.h"
+
+#include "SRC/ALLEGRO/allegro.h"
+#include "SRC/ALLEGRO/A_Sound.h"
+#include "SRC/ALLEGRO/setup_f.h"
 
 extern System_t System;
 extern Timer_t Timers;
@@ -34,76 +37,26 @@ char debug[NUM_DEBUG][DEBUG_STR_LEN];
 #endif
 
 /*static void interrupt (far *old_Timer_ISR)(void);
-static void interrupt (far *midas_Timer_ISR)(void);
-
-unsigned short setTimerBxHookBx;
-unsigned char recomputeMidasTickRate = 0;
-unsigned int midasTickRate = 1000;*/
-
-void MIDAS_CALL TimerCallback(void)
-{
-    System.time++;
-}
-
-/*void setTimerBxHook()
-{
-        // compute the expected tick rate (as 8.8 fix) with given bx
-    _asm {
-        skipRecompute: popf
-        pushf
-        cmp setTimerBxHookBx, bx
-        jz skipRecompute
-        mov setTimerBxHookBx, bx
-        inc recomputeMidasTickRate
-    }
-}
 
 void interrupt far Timer(void)
 {
     static long last_clock_time = 0;
 
-    asm pushf;
-    asm cli;
-
-    ++System.time;
-
-    if (recomputeMidasTickRate)
-    {
-        midasTickRate = 1000UL / (1193100UL / setTimerBxHookBx);
-        Timers.last_midas_time = System.time;
-        recomputeMidasTickRate = 0;
-    }
-
-    if (Timers.last_midas_time + midasTickRate < System.time)
-    {
-        Timers.last_midas_time = System.time;
-        midas_Timer_ISR();
-    }
+    System.time++;
 
     // keeps the PC clock ticking in the background
-    if (last_clock_time + 55 < System.time)
+    if (last_clock_time + 182 < System.time)
     {
         last_clock_time = System.time;
         old_Timer_ISR();
-    } 
-    else
-    {
-        outportb(PIC2_COMMAND, PIC_EOI);
-        outportb(PIC1_COMMAND, PIC_EOI);
     }
-
-    asm popf;
-}
-
-void interrupt far stubISR(void) {
-
 }
 
 void setTimer(uint16_t new_count)
 {
-    outportb(CONTROL_8253, CONTROL_WORD);
-    outportb(COUNTER_0, LOW_BYTE(new_count));
-    outportb(COUNTER_0, HIGH_BYTE(new_count));
+    outp(CONTROL_8253, CONTROL_WORD);
+    outp(COUNTER_0, LOW_BYTE(new_count));
+    outp(COUNTER_0, HIGH_BYTE(new_count));
 }*/
 
 #if DEBUG == 1
@@ -135,25 +88,27 @@ void initSystem()
 void soundInit()
 {
     printf("Initializing sounds...\n");
-    initSounds();
+    //initSounds();
 	printf("Sound system OK\n");
+}
+
+void sysTime()
+{
+    //keeps the game ticking via Allegro's timer
+    System.time++;
 }
 
 void timerInit()
 {
-    printf("Initializing timer...\n");
-    MIDASsetTimerCallbacks(1000000, FALSE, &TimerCallback, NULL, NULL);
-    /*midas_Timer_ISR = _dos_getvect(TIME_KEEPER_INT);
+    install_timer();
+    install_int(sysTime, 1);
+    /*old_Timer_ISR = _dos_getvect(TIME_KEEPER_INT);
     _dos_setvect(TIME_KEEPER_INT, Timer);
-    setTimer(TIMER_1000HZ);
-    asm sti;*/
-	printf("OK\n");
+    setTimer(TIMER_1000HZ);*/
 }
 
 void gfxInit()
 {
-    extern Palette_t NewPalette;
-
 	printf("Initializing graphics...\n");
     loadFontNew();
     printf("Font loaded\n");
@@ -164,11 +119,8 @@ void gfxInit()
     makeAnimset();
     printf("Basic textures loaded into memory\n");
     setVideoMode(VGA_256_COLOR_MODE);
-    printf("Video mode OK\n");
-    loadPalette("Pal.bmp", &NewPalette);
-    printf("Palette loaded\n");
-    setPalette_VGA(&NewPalette);
-    printf("Palette set\n");
+    initMode13h();
+    printf("Video init OK\n");
     printf("Graphics init OK\n");
     //setVideoMode(TEXT_MODE);
 }
@@ -219,12 +171,6 @@ void initWeapons()
 
 void otherInit()
 {
-    initInput();
-    printf("Keyboard OK\n");
-    if (detectMouse() == TRUE)
-    {
-        printf("Mouse detected\n");
-    }
     initSystem();
     printf("System init OK\n");
     if (!checkDirectoryExists("SAVES"))
@@ -247,13 +193,36 @@ void otherInit()
 void mainInit()
 {
     // sound
-    soundInit();
-    // timer
-    timerInit();
+    //soundInit();
+    // Allegro library
+    allegro_init();
     // misc
     otherInit();
+    if (!checkFileExists("Allegro.cfg"))
+    {
+        setup_main();
+        System.running = 2; // quit to save config file
+    }
+    else
+    {
+        // timer
+        timerInit();
+    }
+    // input
+    initInput();
+    printf("Keyboard OK\n");
+    if (detectMouse() == TRUE)
+    {
+        printf("Mouse detected\n");
+    }
     // gfx
     gfxInit();
+    if (AllegroInitSounds())
+    {
+        AllegroLoadMidi("MUSIC\\MMMENU.MID");
+        AllegroSFXInit();
+        AllegroPlayMidi();
+    }
     printf("Init complete, launching...\n");
 }
 
@@ -291,8 +260,6 @@ void ingameMenuInit()
 
 /*void deinitClock()
 {
-    asm sti;
     setTimer(TIMER_18HZ);
     _dos_setvect(TIME_KEEPER_INT, old_Timer_ISR);
-    asm cli;
 }*/

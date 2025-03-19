@@ -23,6 +23,7 @@ extern System_t System;
 extern Timer_t Timers;
 extern GameData_t Game;
 extern Texture_array TileTextures;
+extern PlanarTexture_array PlanarTileTextures;
 extern Weapon_t Weapons[];
 extern ActorTemplate_t ActorTemplates[];
 extern int actortemplate_count;
@@ -75,6 +76,46 @@ void loadTileset(char* filename)
                 {
                 case 'D': TileTextures.textures[tex_id].material_type = MAT_DEFAULT; continue;
                 case 'G': TileTextures.textures[tex_id].material_type = MAT_GRASS; continue;
+                case 'O': TileSet[symbol].obstacle = 1; continue;
+                case 'B': TileSet[symbol].block_bullets = 1; continue;
+                case 'I': TileSet[symbol].is_entity = 0; continue;
+                case '1': TileSet[symbol].entity_value = TILE_DMG_10; continue;
+                
+                default:  continue;
+                }
+            }
+        }
+    }
+    fclose(tileset);
+}
+
+void loadPlanarTileset(char* filename)
+{
+    FILE* tileset;
+    char symbol, tex_id;
+    char c;
+    char name[50];
+
+    tileset = fopen(filename, "rb");
+
+    if (tileset == NULL)
+        tileset = fopen(DEFAULT_TILESET, "rb");
+
+    while ((c = fgetc(tileset)) && !feof(tileset))
+    {
+        if (c == '$')
+        {
+            symbol = fgetc(tileset) - 32;
+            fscanf(tileset, "%s", name);
+            tex_id = loadPlanarTexture(name, &PlanarTileTextures);
+            TileSet[symbol].texture_id = tex_id;
+
+            while ((c = fgetc(tileset)) != '\n' && !feof(tileset))
+            {
+                switch (c)
+                {
+                case 'D': PlanarTileTextures.textures[tex_id].material_type = MAT_DEFAULT; continue;
+                case 'G': PlanarTileTextures.textures[tex_id].material_type = MAT_GRASS; continue;
                 case 'O': TileSet[symbol].obstacle = 1; continue;
                 case 'B': TileSet[symbol].block_bullets = 1; continue;
                 case 'I': TileSet[symbol].is_entity = 0; continue;
@@ -263,7 +304,10 @@ void levelLoader(char* level_name, uint8_t load_type)
             {
                 fscanf(level_file, "%s", tileset_file);
                 tileset_found = TRUE;
-                loadTileset(tileset_file);
+                if (System.screen_height == 200)
+                    loadTileset(tileset_file);
+                else
+                    loadPlanarTileset(tileset_file);
             }
             else if (strcmp(buffer, "leveldim") == 0)
             {

@@ -1,6 +1,8 @@
+#include "SRC/Allegro/Allegro.h"
+#include "SRC/GENERAL/General.h"
 #include "SRC/GENERAL/Common.h"
 #include "SRC/GENERAL/General.h"
-#include "SRC/SOUND/MIDAS/midasdll.h"
+//#include "SRC/SOUND/MIDAS/midasdll.h"
 #include "Init.h"
 #include "Input.h"
 #include "Keyb.h"
@@ -19,11 +21,19 @@ extern int stack_top;
 
 void quit()
 {
-    //gameExit();
     //deinitClock();
-    MIDASclose();
     quitInput();
+    allegro_exit();
     setVideoMode(TEXT_MODE);
+    printf("Thanks for playing!\n");
+}
+
+void quitSetup()
+{
+    // exit from Allegro setup
+    allegro_exit();
+    setVideoMode(TEXT_MODE);
+    printf("Setup complete, run the game again to play!\n");
 }
 
 void updateStats()
@@ -32,7 +42,6 @@ void updateStats()
     if (System.debug_mode == TRUE)
         sprintf(debug[DEBUG_FPS], "TIME: %ld MINS, %ld SECS\nTICKS: %ld, FRAMES: %ld\nFPS: %d, AVERAGE: %.2f",
             System.seconds/60, System.seconds%60, System.ticks, System.frames, System.fps, System.fps_avg);
-    //sprintf(debug[DEBUG_FPS], "BX=%u RC=%u T=%lu", setTimerBxHookBx, recomputeMidasTickRate, System.time);
     #endif
 }
 
@@ -100,7 +109,10 @@ void drawStates()
 void renderFrame()
 {
     drawStates();
-    render();
+    if (System.screen_height == SCREEN_HEIGHT_13H)
+        render13h();
+    else
+        renderModeX();
 
     System.frames++;
     Timers.frame_count++;
@@ -163,6 +175,9 @@ void main()
         mainInit();
         pushState(STATE_TITLE);
         loop();
-        quit();
+        if (System.running == 0)
+            quit();
+        else if (System.running == 2)
+            quitSetup();
     }
 }

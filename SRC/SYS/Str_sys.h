@@ -21,6 +21,7 @@ typedef struct
     float  fps_avg;     // average fps (frames/seconds)
     int    ticks_per_frame; // number of ticks per frame, varies based on frame rate
     uint8_t debug_mode; // on/off
+    uint8_t screen_height; // 200 for standard mode 13h, 240 for mode X 
 } System_t;
 
 typedef struct 

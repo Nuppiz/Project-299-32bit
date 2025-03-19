@@ -1,3 +1,4 @@
+ALLEGRO - Allegro library and stripped-down headers (only using the sounds now)
 FILEAXS - Code related to functions that read/load/save files (excl. sound)
 GAMEPLAY - Code related to gameplay functions
 GENERAL - Code used throughout the codebase

@@ -22,6 +22,7 @@ extern GameData_t Game;
 
 extern Texture_array ObjectTextures;
 extern Texture_array TileTextures;
+extern PlanarTexture_array PlanarTileTextures;
 extern Anim_array Animations;
 extern Tile_t TileSet[];
 extern Item_t* Items;
@@ -31,6 +32,8 @@ extern Weapon_t Weapons[];
 // test subjects, del later
 extern Sprite_t Rocket;
 extern Sprite_t Explosion;
+extern RLETexture_t RLETest;
+extern RLETexture_t LargeRLETest;
 
 Vec2 camera_offset;
 
@@ -46,9 +49,11 @@ TempSprite_t TempSprites[MAX_TEMPSPRITES] = {0};
 int tempsprite_read = 0;
 int tempsprite_write = 0;
 
+void drawDebug();
+
 int boundaryCheck(int x, int y)
 {
-    if (x < SCREEN_WIDTH && x >= 0 && y < SCREEN_HEIGHT && y >= 0)
+    if (x < SCREEN_WIDTH && x >= 0 && y < System.screen_height && y >= 0)
         return TRUE;
     else
         return FALSE;
@@ -56,10 +61,10 @@ int boundaryCheck(int x, int y)
 
 int boundaryCheckRadius(int x, int y, int radius)
 {
-    if (x < SCREEN_WIDTH - radius && x >= 0 + radius && y < SCREEN_HEIGHT - radius && y >= 0 + radius)
+    if (x < SCREEN_WIDTH - radius && x >= 0 + radius && y < System.screen_height - radius && y >= 0 + radius)
         return FULLY_IN;
     else if (x - radius > SCREEN_WIDTH || x + radius < 0 ||
-            y - radius > SCREEN_HEIGHT || y + radius < 0)
+            y - radius > System.screen_height || y + radius < 0)
         return FULLY_OUT;
     else
         return PARTIAL;
@@ -75,10 +80,108 @@ int boundaryCheck_X(int x)
 
 int boundaryCheck_Y(int y)
 {
-    if (y < SCREEN_HEIGHT && y >= 0)
+    if (y < System.screen_height && y >= 0)
         return TRUE;
     else
         return FALSE;
+}
+
+void setPixelModeX(int x, int y, uint8_t color)
+{
+    int plane = x % 4; // use modulo to determine which of the four VGA memory planes to use
+    ModeX_buf[plane][(y * 80) + (x >> 2)] = color;
+}
+
+void drawRLEGfx(int x, int y, RLETexture_t* texture)
+{
+    int pix_x = x;
+    int pix_y = y;
+    int index_y;
+    int index_x;
+    uint16_t file_index = 0; // current index in the data array that is being looked at
+    uint16_t pixel_count = 0; // amount of pixels to set in the same colour
+    uint8_t palette_index = 0; // palette index of the colour being set
+    uint8_t pixel_count_jump = 2; // amount of bytes to jump in the data array for the next pixel count
+    uint8_t palette_index_jump = 1; // amount of bytes to jump in the data array for the next pixel count
+    uint16_t row_overflow = 0; // RLE compression doesn't have the original bitmap rows, so this is the amount of pixels moving to the next row
+
+    // with larger files the pixel count spans two bytes
+    if ((texture->flags & TEXTURE_FLAGS_LARGE_RLE))
+    {
+        pixel_count_jump = 3;
+        palette_index_jump = 2;
+    }
+
+    for (index_y = 0; index_y < texture->height; index_y++)
+    {
+        for (index_x = 0; index_x < texture->width; index_x += pixel_count)
+        {
+            // fetch pixel count and palette index from the data
+            if ((texture->flags & TEXTURE_FLAGS_LARGE_RLE))
+            {
+                pixel_count = (texture->pixels[file_index + 1] << 8) | texture->pixels[file_index]; // combine the to 8-bit values into one 16-bit
+            }
+            else
+            {
+                pixel_count = texture->pixels[file_index];
+            }
+            palette_index = texture->pixels[file_index + palette_index_jump];
+            // draw pixels on screen if they're not set to transparent
+            if (palette_index != TRANSPARENT_COLOR)
+            {
+                // if all pixels fit on the current row, draw them right away
+                if (index_x + pixel_count <= texture->width)
+                    _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
+                // else calculate how many pixels won't fit on the current row, and only draw the ones that fit
+                else
+                {
+                    row_overflow = index_x + pixel_count - texture->width;
+                    _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count - row_overflow);
+                }
+                // move starting X coordinate by the amount we drew pixels, and jump to next pixel count
+                pix_x += pixel_count;
+                file_index += pixel_count_jump;
+            }
+            // with transparent pixels we skip drawing and just calculate possible row overflows
+            else
+            {
+                if (index_x + pixel_count > texture->width)
+                    row_overflow = index_x + pixel_count - texture->width;
+                pix_x += pixel_count;
+                file_index += pixel_count_jump;
+            }
+
+            // if there are pixels left over from the previous row(s), process them until we reach 0 leftovers
+            // this should only happen if the files were converted without maintaining row data
+            while (row_overflow > 0)
+            {
+                // reset X coordinate and index and advance to the next row in memory
+                index_x = 0;
+                pix_x = x;
+                index_y++, pix_y++;
+
+                pixel_count = row_overflow;
+                // if all leftover pixels fit on the current row, draw them on the screen (if not transparent) and kill the while loop
+                if (index_x + pixel_count <= texture->width)
+                {
+                    if (palette_index != TRANSPARENT_COLOR)
+                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
+                    row_overflow = 0;
+                    index_x, pix_x += pixel_count;
+                }
+                // else continue decrementing the leftover pixels and advancing rows until we reach 0
+                else
+                {
+                    row_overflow -= texture->width;
+                    if (palette_index != TRANSPARENT_COLOR)
+                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, row_overflow);
+                }
+            }
+
+        }
+        pix_x = x;
+        pix_y++;
+    }
 }
 
 void drawTexture(int x, int y, Texture_t* texture)
@@ -89,7 +192,7 @@ void drawTexture(int x, int y, Texture_t* texture)
     int index_y;
     int i = 0;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < texture->height; index_y++)
         {
@@ -97,7 +200,7 @@ void drawTexture(int x, int y, Texture_t* texture)
             {
                 if (texture->pixels[i] != TRANSPARENT_COLOR)
                 {
-                    if (pix_x < SCREEN_WIDTH && pix_y < SCREEN_HEIGHT)
+                    if (pix_x < SCREEN_WIDTH && pix_y < System.screen_height)
                     {
                         SET_PIXEL(pix_x, pix_y, texture->pixels[i]);
                         i++;
@@ -151,7 +254,7 @@ void drawTextureClipped(int x, int y, Texture_t* texture)
     end_x = start_x + sprite_w - 1;
     end_y = start_y + sprite_h - 1;
 
-    if (start_x >= SCREEN_WIDTH || start_y >= SCREEN_HEIGHT || start_x <= -sprite_w || start_y <= -sprite_h)
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || start_x <= -sprite_w || start_y <= -sprite_h)
         return;
     
     if (start_x < 0)
@@ -169,15 +272,77 @@ void drawTextureClipped(int x, int y, Texture_t* texture)
         start_y = 0;
     }
     
-    else if (end_y >= SCREEN_HEIGHT)
-        end_y = SCREEN_HEIGHT - 1;
+    else if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
 
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
+
     for (index_y = 0; index_y < clip_y; index_y++)
     {
         _fmemcpy(&screen_buf[(start_y + index_y) * SCREEN_WIDTH + start_x], &texture->pixels[(index_y + y_offset) * texture->width + x_offset], clip_x);
+    }
+}
+
+void drawPlanarTextureClipped(int x, int y, PlanarTexture_t* texture)
+{
+    int start_x;
+    int start_y;
+    int end_x;
+    int end_y;
+    int plane;
+    int index_y;
+    int clip_x;
+    int clip_y;
+    int x_offset = 0;
+    int y_offset = 0;
+
+    int sprite_w = texture->width;
+    int sprite_h = texture->height;
+
+    start_x = x;
+    start_y = y;
+
+    end_x = start_x + sprite_w - 1;
+    end_y = start_y + sprite_h - 1;
+
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || start_x <= -sprite_w || start_y <= -sprite_h)
+        return;
+    
+    if (start_x < 0)
+    {   
+        x_offset = abs(start_x);
+        start_x = 0;
+    }
+    
+    else if (end_x >= SCREEN_WIDTH)
+        end_x = SCREEN_WIDTH - 1;
+
+    if (start_y < 0)
+    {
+        y_offset = abs(start_y);
+        start_y = 0;
+    }
+    
+    else if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
+
+    // all horizontal values must be divided by four due to the planar structure, and bit-shifting by two to the right is quicker
+
+    clip_x = ((end_x - start_x) >> 2) + 1;
+    clip_y = end_y - start_y + 1;
+
+    start_x = start_x >> 2;
+    sprite_w = sprite_w >> 2;
+    x_offset = x_offset >> 2;
+
+    for (plane = 0; plane < 4; plane++)
+    {
+        for (index_y = 0; index_y < clip_y; index_y++)
+        {
+            _fmemcpy(&ModeX_buf[plane][(start_y + index_y) * 80 + start_x], &texture->pixels[plane][(index_y + y_offset) * sprite_w + x_offset], clip_x);
+        }
     }
 }
 
@@ -206,7 +371,7 @@ void drawTexturePartial(int x, int y, Texture_t* texture)
     end_x = start_x + sprite_w - 1;
     end_y = start_y + sprite_h - 1;
 
-    if (start_x >= SCREEN_WIDTH || start_y >= SCREEN_HEIGHT || start_x <= -sprite_w || start_y <= -sprite_h)
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || start_x <= -sprite_w || start_y <= -sprite_h)
         return;
     
     if (start_x < 0)
@@ -224,13 +389,13 @@ void drawTexturePartial(int x, int y, Texture_t* texture)
         start_y = 0;
     }
     
-    else if (end_y >= SCREEN_HEIGHT)
-        end_y = SCREEN_HEIGHT - 1;
+    else if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
 
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < clip_y; index_y++)
         {
@@ -321,8 +486,8 @@ void drawTextureRotated(int x, int y, double angle, Texture_t* source, uint8_t b
         rotated.width = abs(source->height * sin(angle)) + abs(source->width * cos(angle)) + 5;
         rotated.height = abs(source->width * sin(angle)) + abs(source->height * cos(angle)) + 5;
 
-    if (source->transparent == TRUE)
-        rotated.transparent = TRUE;
+    if ((source->flags & TEXTURE_FLAGS_TRANSPARENCY))
+        rotated.flags |= (TEXTURE_FLAGS_TRANSPARENCY);
 
     rotated.offset_x = (rotated.width - source->width) / 2;
     rotated.offset_y = (rotated.height - source->height) / 2;
@@ -454,8 +619,8 @@ RotatedTexture_t saveRotatedTexture(double angle, Texture_t* source, uint8_t bgc
         rotated.width = abs(source->height * sin(angle)) + abs(source->width * cos(angle)) + 5;
         rotated.height = abs(source->width * sin(angle)) + abs(source->height * cos(angle)) + 5;
 
-    if (source->transparent == TRUE)
-        rotated.transparent = TRUE;
+    if ((source->flags & TEXTURE_FLAGS_TRANSPARENCY))
+        rotated.flags |= (TEXTURE_FLAGS_TRANSPARENCY);
 
     rotated.offset_x = (rotated.width - source->width) / 2;
     rotated.offset_y = (rotated.height - source->height) / 2;
@@ -530,7 +695,7 @@ void drawPrerotatedTexture(int x, int y, RotatedTexture_t* texture)
     end_x = start_x + sprite_w - 1;
     end_y = start_y + sprite_h - 1;
 
-    if (start_x >= SCREEN_WIDTH || start_y >= SCREEN_HEIGHT || start_x <= -sprite_w || start_y <= -sprite_h)
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || start_x <= -sprite_w || start_y <= -sprite_h)
         return;
     
     if (start_x < 0)
@@ -548,13 +713,13 @@ void drawPrerotatedTexture(int x, int y, RotatedTexture_t* texture)
         start_y = 0;
     }
     
-    else if (end_y >= SCREEN_HEIGHT)
-        end_y = SCREEN_HEIGHT - 1;
+    else if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
 
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
-    if (texture->transparent == TRUE)
+    if ((texture->flags & TEXTURE_FLAGS_TRANSPARENCY))
     {
         for (index_y = 0; index_y < clip_y; index_y++)
         {
@@ -580,7 +745,7 @@ void drawTextureFromCache(int x, int y, double angle, AnimFrame_t* source)
     // now it's redone and supports an arbitrary number of rotations - 18th March 2024
 
     uint8_t angle_index = 0;
-    double test_angle = (ROTATION_ANGLE_STEP / 2.00);
+    double test_angle = (ROTATION_ANGLE_STEP / 2.00); // angle that is tested against the angle of the object to determine correct rotation index
 
     if (angle >= RAD_360 - (ROTATION_ANGLE_STEP / 2.00) || angle < (ROTATION_ANGLE_STEP / 2.00))
         angle_index = 0;
@@ -709,21 +874,24 @@ void drawMap()
     int a; // array index for Interactives array
 
     // run loops until maximum number of squares is drawn and the edges of the screen have been reached
-    for (y_pixel = 0 - camera_offset.y, num_rows = 0; y_pixel < SCREEN_HEIGHT && num_rows < max_rows; y_pixel += SQUARE_SIZE)
+    for (y_pixel = 0 - camera_offset.y, num_rows = 0; y_pixel < System.screen_height && num_rows < max_rows; y_pixel += SQUARE_SIZE)
     {
         if (camera_offset.x > 0)
         {
             for (x_pixel = 0 - (camera_offset.x - xi * SQUARE_SIZE), num_cols = 0; x_pixel < SCREEN_WIDTH && num_cols <= max_cols; x_pixel += SQUARE_SIZE, num_cols++)
             {
-                drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
-                for (a = 0; a < Game.item_count; a++)
+                if (System.screen_height == SCREEN_HEIGHT_13H)
+                    drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                else
+                    drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                /*for (a = 0; a < Game.item_count; a++)
                 {
                     if (Items[a].state == 1)
                     {                    
                         if (i == Items[a].index && Items[a].type == ITEM_KEY_RED)
                             drawTexturePartial(x_pixel, y_pixel, &ObjectTextures.textures[TEX_KEY]);
                     }
-                }
+                }*/
                 i++;
             }
         }
@@ -734,15 +902,18 @@ void drawMap()
                 // eliminate unnecessary drawing on the left of the screen
                 if (x_pixel >= abs(xi) * SQUARE_SIZE)
                 {
-                    drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
-                    for (a = 0; a < Game.item_count; a++)
+                    if (System.screen_height == SCREEN_HEIGHT_13H)
+                        drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                    else
+                        drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                    /*for (a = 0; a < Game.item_count; a++)
                     {
                         if (Items[a].state == 1)
                         {                    
                             if (i == Items[a].index && Items[a].type == ITEM_KEY_RED)
                                 drawTexturePartial(x_pixel, y_pixel, &ObjectTextures.textures[TEX_KEY]);
                         }
-                    }
+                    }*/
                 }
                 i++;
             }
@@ -768,8 +939,8 @@ void calcCameraOffset()
 
     int cam_min_x = SCREEN_WIDTH/2;
     int cam_max_x = Game.Map.width*SQUARE_SIZE - SCREEN_WIDTH/2;
-    int cam_min_y = SCREEN_HEIGHT/2;
-    int cam_max_y = Game.Map.height*SQUARE_SIZE - SCREEN_HEIGHT/2;
+    int cam_min_y = System.screen_height/2;
+    int cam_max_y = Game.Map.height*SQUARE_SIZE - System.screen_height/2;
 
     angle = atan2(PLAYER_ACTOR.direction.y, PLAYER_ACTOR.direction.x);
     pos.x = PLAYER_ACTOR.position.x + cos(angle) * LOOK_DISTANCE;
@@ -786,7 +957,7 @@ void calcCameraOffset()
         pos.y = cam_max_y;
 
     camera_offset.x = pos.x - (SCREEN_WIDTH / 2);// - SQUARE_SIZE / 2;
-    camera_offset.y = pos.y - (SCREEN_HEIGHT / 2);// - SQUARE_SIZE / 2;
+    camera_offset.y = pos.y - (System.screen_height / 2);// - SQUARE_SIZE / 2;
 }
 
 void drawDot(Actor_t* actor)
@@ -1269,8 +1440,6 @@ void drawActors()
     }
 }
 
-void drawDebug();
-
 void drawHealth()
 {
     char plr_health[10];
@@ -1289,7 +1458,7 @@ void drawStats()
 
 void menuDraw()
 {
-    _fmemset(screen_buf, 0, SCREEN_SIZE);
+    _fmemset(screen_buf, 0, SCREEN_SIZE_13H);
     drawMenuText();
 }
 
@@ -1375,19 +1544,21 @@ void gameDraw()
     drawMap();
     corpseArrayManager();
     testSetPlayerAnim();
-    drawActors();
-    drawHealth();
-    drawStats();
+    //drawActors();
+    //drawHealth();
+    //drawStats();
     //testFont();
     //animTestBlock();
     //rocketPrecacheTest();
     particleArrayManager();
     tempSpriteArrayManager();
+    //drawRLEGfx(0, 0, &LargeRLETest);
+    //drawRLEGfx(50, 50, &RLETest);
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {
-        sprintf(debug[DEBUG_DRAW], "ANIM: %d", PLAYER_ACTOR.sprite.anim_id);
-        sprintf(debug[DEBUG_DRAW], "TS: %f", TempSprites[tempsprite_write - 1].angle);
+        //sprintf(debug[DEBUG_DRAW], "ANIM: %d", PLAYER_ACTOR.sprite.anim_id);
+        //sprintf(debug[DEBUG_DRAW], "TS: %f", TempSprites[tempsprite_write - 1].angle);
         drawDebug();
     }
     #endif
@@ -1400,6 +1571,5 @@ void pauseDraw()
 
 void ingameMenuDraw()
 {
-    //_fmemset(screen_buf, 0, SCREEN_SIZE);
     drawMenuText();
 }
