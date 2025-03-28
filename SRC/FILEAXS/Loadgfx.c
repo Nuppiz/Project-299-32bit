@@ -136,8 +136,8 @@ int loadTexture(char* filename, Texture_array* array)
     int filename_length;
     FILE* file_ptr;
 
-    //loop all textures here to check if it was already loaded,
-    //return id of that texture if it was found.
+    // loop all textures here to check if it was already loaded,
+    // return id of that texture if it was found.
 
     if ((texture_id = findTexture(filename, array)) != 0)
         return texture_id;
@@ -149,8 +149,8 @@ int loadTexture(char* filename, Texture_array* array)
         return 0;
     }
 
+    // reallocate emory for the texture array, crash if allocation fails
     array->textures = realloc(array->textures, (array->texture_count + 1) * sizeof(Texture_t));
-
     ASSERT(array->textures != NULL);
 
     texture_id = array->texture_count;
@@ -160,13 +160,17 @@ int loadTexture(char* filename, Texture_array* array)
     array->textures[texture_id].filename = malloc(filename_length);
     strcpy(array->textures[texture_id].filename, filename);
 
+    // read in file dimensions and allocate memory
     fread(&array->textures[texture_id].width, 2, 1, file_ptr);
     fseek(file_ptr, 2, SEEK_SET);
     fread(&array->textures[texture_id].height, 2, 1, file_ptr);
+    array->textures[texture_id].pixels = malloc(array->textures[texture_id].width * array->textures[texture_id].height);
+
+    // read flags such as transparency
     fseek(file_ptr, 6, SEEK_SET);
     fread(&array->textures[texture_id].flags, 2, 1, file_ptr);
-	fseek(file_ptr, 8, SEEK_SET);
-    array->textures[texture_id].pixels = malloc(array->textures[texture_id].width * array->textures[texture_id].height);
+
+	fseek(file_ptr, 8, SEEK_SET); // start reading pixel data 
     fread(array->textures[texture_id].pixels, 1, array->textures[texture_id].width * array->textures[texture_id].height, file_ptr);
     array->textures[texture_id].offset_x = 0;
     array->textures[texture_id].offset_y = 0;
@@ -183,8 +187,8 @@ int loadPlanarTexture(char* filename, PlanarTexture_array* array)
     long index;
     FILE* file_ptr;
 
-    //loop all textures here to check if it was already loaded,
-    //return id of that texture if it was found.
+    // loop all textures here to check if it was already loaded,
+    // return id of that texture if it was found.
 
     if ((texture_id = findPlanarTexture(filename, array)) != 0)
         return texture_id;
@@ -196,8 +200,8 @@ int loadPlanarTexture(char* filename, PlanarTexture_array* array)
         return 0;
     }
 
+    // reallocate emory for the texture array, crash if allocation fails
     array->textures = realloc(array->textures, (array->texture_count + 1) * sizeof(PlanarTexture_t));
-
     ASSERT(array->textures != NULL);
 
     texture_id = array->texture_count;

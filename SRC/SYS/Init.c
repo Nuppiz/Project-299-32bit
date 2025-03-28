@@ -119,7 +119,7 @@ void gfxInit()
     makeAnimset();
     printf("Basic textures loaded into memory\n");
     setVideoMode(VGA_256_COLOR_MODE);
-    initMode13h();
+    setMode13h();
     printf("Video init OK\n");
     printf("Graphics init OK\n");
     //setVideoMode(TEXT_MODE);

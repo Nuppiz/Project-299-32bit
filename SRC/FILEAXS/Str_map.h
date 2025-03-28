@@ -6,7 +6,7 @@
 #include "SRC/GENERAL/Common.h"
 
 typedef struct {
-    uint8_t texture_id : 7;
+    uint8_t texture_id;
     uint8_t obstacle : 1;
     uint8_t block_bullets : 1;
     uint8_t is_entity : 1;
@@ -43,4 +43,4 @@ typedef struct {
     uint8_t type : 7; // type of item from Items enum
 } Item_t;
 
-#endif
+#endif /* STR_MAP_H */

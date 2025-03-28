@@ -4,6 +4,7 @@
 
 #include "Def_vid.h"
 #include "Str_vid.h"
+#include "FASTVGA.H"
 
 /* Video mode and palette settings */
 
@@ -11,6 +12,9 @@ uint8_t* game_screen;            /* this points to video memory. */
 uint8_t far* screen_buf;        // Double screen buffer for mode 13h
 uint8_t far* ModeX_buf[4];      // Double screen buffer for mode X
 Palette_t NewPalette;
+
+uint8_t far* ModeX_buf2;
+int current_video_mode = MODE_13H; // Default mode
 
 extern System_t System;
 
@@ -86,11 +90,31 @@ void setPalette_VGA(Palette_t* pal)
     }
 }
 
-void initMode13h()
+void setMode13h()
 {
-    // allocate memory for mode 13h double buffer, set the system variable for screen height and load in the palette
-    screen_buf = malloc(SCREEN_SIZE_13H);
+    int plane;
+    // Only free Mode X buffers if we're coming from Mode X
+    if (current_video_mode == MODE_X) {
+        for (plane = 0; plane < 4; plane++) {
+            if (ModeX_buf[plane] != NULL) {
+                free(&ModeX_buf[plane]);
+                ModeX_buf[plane] = NULL;
+            }
+        }
+    }
+    
+    // Set mode 13h
+    setVideoMode(MODE_13H);
+    
+    // Only allocate buffer if not already allocated
+    if (screen_buf == NULL) {
+        screen_buf = malloc(SCREEN_SIZE_13H);
+    }
+    _fmemset(screen_buf, 0, SCREEN_SIZE_13H);
+    
     System.screen_height = SCREEN_HEIGHT_13H;
+    current_video_mode = MODE_13H;
+
     loadPalette("Pal.bmp", &NewPalette);
     setPalette_VGA(&NewPalette);
 }
@@ -99,10 +123,15 @@ void setModeX()
 {
     int plane;
 
+    // Only free Mode 13h buffer if we're coming from Mode 13h
+    if (current_video_mode == MODE_13H && screen_buf != NULL) {
+        free(&screen_buf);
+    }
+    
     outpw(SC_INDEX, 0x0604); // chain 4 off
     outpw(CRTC_INDEX, 0xE317); // word mode off (byte mode)
     outpw(CRTC_INDEX, 0x0014); // long mode off (byte mode)
-    
+
     outp(MISC_OUTPUT, 0xE3); // vertical sync polarity
     outpw(CRTC_INDEX, 0x2C11); // write protect off
     outpw(CRTC_INDEX, 0x0D06); // vertical total
@@ -113,23 +142,27 @@ void setModeX()
     outpw(CRTC_INDEX, 0xE715); // start vertical blanking
     outpw(CRTC_INDEX, 0x0616); // end vertical blanking
 
-    // free the mode 13h screen buffer
-    free(&screen_buf);
+    outpw(SC_INDEX, ALL_PLANES);
+    memset(game_screen, 0, SCREEN_SIZE_X);
 
-    // allocate memory for mode X screen buffer and set the system variable for screen height
-    // since mode X uses planar memory, the buffer memory must be allocated in four planes
-    for (plane = 0; plane < 4; plane++)
-    {
-        ModeX_buf[plane] = malloc(PLANE_SIZE_X);
-        _fmemset(ModeX_buf[plane], 0, PLANE_SIZE_X);
+    // Only allocate Mode X buffers if not already allocated
+    if (current_video_mode != MODE_X) {
+        for (plane = 0; plane < 4; plane++) {
+            if (ModeX_buf[plane] == NULL) {
+                ModeX_buf[plane] = malloc(PLANE_SIZE_X);
+            }
+            _fmemset(ModeX_buf[plane], 0, PLANE_SIZE_X);
+        }
     }
+
     System.screen_height = SCREEN_HEIGHT_X;
+    current_video_mode = MODE_X;
 }
 
 void render13h()
 {
     // copy off-screen buffer to VGA memory
-    memcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
+    _fmemcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
 
     // clear off-screen buffer so the screen updates properly
     _fmemset(screen_buf, 0, SCREEN_SIZE_13H);
@@ -138,7 +171,7 @@ void render13h()
 void renderWithoutClear()
 {     
     // copy off-screen buffer to VGA memory, don't clear buffer
-    memcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
+    _fmemcpy(game_screen, screen_buf, SCREEN_SIZE_13H);
 }
 
 void renderModeX()
@@ -148,7 +181,24 @@ void renderModeX()
     for (plane = 0; plane < 4; plane++)
     {
         outpw(SC_INDEX, (0x0100 << plane) | 0x02); // select plane
-        memcpy(game_screen, ModeX_buf[plane], PLANE_SIZE_X);
+        fast_vga_memcpy(game_screen, ModeX_buf[plane], PLANE_SIZE_X);
         _fmemset(ModeX_buf[plane], 0, PLANE_SIZE_X);
     }
+    //memcpy(ModeX_buf2, ModeX_buf, SCREEN_SIZE_X);
+    //_fmemset(ModeX_buf, 0, SCREEN_SIZE_X);
+
+    //outpw(SC_INDEX, (0x0100 << 0) | 0x02); // select plane
+    //memset(game_screen, 160, PLANE_SIZE_X);
+}
+
+void dumpDisplayBuffer()
+{
+    // debug: save current content of Mode X display buffer to file
+    FILE* dump_file;
+
+    dump_file = fopen("BUFFER.DAT", "w");
+
+    fwrite(ModeX_buf2, SCREEN_SIZE_X, 1, dump_file);
+
+    fclose(dump_file);
 }

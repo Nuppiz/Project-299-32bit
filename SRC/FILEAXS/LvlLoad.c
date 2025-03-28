@@ -23,6 +23,7 @@ extern System_t System;
 extern Timer_t Timers;
 extern GameData_t Game;
 extern Texture_array TileTextures;
+extern Texture_array ColumnTileTextures;
 extern PlanarTexture_array PlanarTileTextures;
 extern Weapon_t Weapons[];
 extern ActorTemplate_t ActorTemplates[];

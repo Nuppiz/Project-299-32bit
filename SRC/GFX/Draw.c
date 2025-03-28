@@ -35,7 +35,7 @@ extern Sprite_t Explosion;
 extern RLETexture_t RLETest;
 extern RLETexture_t LargeRLETest;
 
-Vec2 camera_offset;
+Vec2_int camera_offset;
 
 Particle_t Particles[MAX_PARTICLES] = {0};
 int particle_read = 0;
@@ -48,6 +48,9 @@ int corpse_write = 0;
 TempSprite_t TempSprites[MAX_TEMPSPRITES] = {0};
 int tempsprite_read = 0;
 int tempsprite_write = 0;
+
+TileRun tileRuns[MAX_TILE_RUNS];
+int tileRunCount = 0;
 
 void drawDebug();
 
@@ -90,6 +93,37 @@ void setPixelModeX(int x, int y, uint8_t color)
 {
     int plane = x % 4; // use modulo to determine which of the four VGA memory planes to use
     ModeX_buf[plane][(y * 80) + (x >> 2)] = color;
+}
+
+static void processRLEOverflow(int pix_x, int pix_y, int start_x, int index_x, int index_y, RLETexture_t* texture, uint16_t pixel_count, uint8_t palette_index, uint16_t row_overflow)
+{
+    // if there are pixels left over from the previous row(s), process them until we reach 0 leftovers
+    // this should only happen if the bitmap was converted without maintaining row data
+    while (row_overflow > 0)
+    {
+        // reset X coordinate and index and advance to the next row in memory
+        index_x = 0;
+        pix_x = start_x;
+        index_y++, pix_y++;
+
+        pixel_count = row_overflow;
+        // if all leftover pixels fit on the current row, draw them on the screen (if not transparent) and kill the while loop
+        if (index_x + pixel_count <= texture->width)
+        {
+            if (palette_index != TRANSPARENT_COLOR)
+                _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
+            row_overflow = 0;
+            index_x, pix_x += pixel_count;
+        }
+        // else continue decrementing the leftover pixels and advancing rows until we reach 0
+        else
+        {
+            row_overflow -= texture->width;
+            if (palette_index != TRANSPARENT_COLOR)
+                _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, texture->width);
+        }
+    }
+
 }
 
 void drawRLEGfx(int x, int y, RLETexture_t* texture)
@@ -150,34 +184,7 @@ void drawRLEGfx(int x, int y, RLETexture_t* texture)
                 pix_x += pixel_count;
                 file_index += pixel_count_jump;
             }
-
-            // if there are pixels left over from the previous row(s), process them until we reach 0 leftovers
-            // this should only happen if the files were converted without maintaining row data
-            while (row_overflow > 0)
-            {
-                // reset X coordinate and index and advance to the next row in memory
-                index_x = 0;
-                pix_x = x;
-                index_y++, pix_y++;
-
-                pixel_count = row_overflow;
-                // if all leftover pixels fit on the current row, draw them on the screen (if not transparent) and kill the while loop
-                if (index_x + pixel_count <= texture->width)
-                {
-                    if (palette_index != TRANSPARENT_COLOR)
-                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, pixel_count);
-                    row_overflow = 0;
-                    index_x, pix_x += pixel_count;
-                }
-                // else continue decrementing the leftover pixels and advancing rows until we reach 0
-                else
-                {
-                    row_overflow -= texture->width;
-                    if (palette_index != TRANSPARENT_COLOR)
-                        _fmemset(&screen_buf[pix_y * SCREEN_WIDTH + pix_x], palette_index, row_overflow);
-                }
-            }
-
+            processRLEOverflow(pix_x, pix_y, x, index_x, index_y, texture, pixel_count, palette_index, row_overflow);
         }
         pix_x = x;
         pix_y++;
@@ -278,21 +285,19 @@ void drawTextureClipped(int x, int y, Texture_t* texture)
     clip_x = end_x - start_x + 1;
     clip_y = end_y - start_y + 1;
 
-
     for (index_y = 0; index_y < clip_y; index_y++)
     {
         _fmemcpy(&screen_buf[(start_y + index_y) * SCREEN_WIDTH + start_x], &texture->pixels[(index_y + y_offset) * texture->width + x_offset], clip_x);
     }
 }
 
-void drawPlanarTextureClipped(int x, int y, PlanarTexture_t* texture)
+void drawColumnTextureClipped(int x, int y, Texture_t* texture)
 {
     int start_x;
     int start_y;
     int end_x;
     int end_y;
-    int plane;
-    int index_y;
+    int index_x, index_y;
     int clip_x;
     int clip_y;
     int x_offset = 0;
@@ -328,6 +333,60 @@ void drawPlanarTextureClipped(int x, int y, PlanarTexture_t* texture)
     else if (end_y >= System.screen_height)
         end_y = System.screen_height - 1;
 
+    clip_x = end_x - start_x + 1;
+    clip_y = end_y - start_y + 1;
+
+    for (index_y = 0; index_y < clip_y; index_y++)
+    {
+        for (index_x = 0; index_x < clip_x; index_x++)
+            setPixelModeX(start_x + index_x, start_y + index_y, texture->pixels[(index_y + y_offset) * texture->width + (x_offset + index_x)]);
+            
+    }
+}
+
+void drawPlanarTextureClipped(int x, int y, PlanarTexture_t* texture)
+{
+    int start_x;
+    int start_y;
+    int end_x;
+    int end_y;
+    int plane;
+    int index_y;
+    int clip_x;
+    int clip_y;
+    int x_offset = 0;
+    int y_offset = 0;
+
+    int sprite_w = texture->width;
+    int sprite_h = texture->height;
+
+    start_x = x;
+    start_y = y;
+
+    end_x = start_x + sprite_w - 1;
+    end_y = start_y + sprite_h - 1;
+
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || start_x <= -sprite_w || start_y <= -sprite_h)
+        return;
+    
+    if (start_x < 0)
+    {   
+        x_offset = abs(start_x);
+        start_x = 0;
+    }
+        
+    else if (end_x >= SCREEN_WIDTH)
+        end_x = SCREEN_WIDTH - 1;
+
+    if (start_y < 0)
+    {
+        y_offset = abs(start_y);
+        start_y = 0;
+    }
+    
+    else if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
+
     // all horizontal values must be divided by four due to the planar structure, and bit-shifting by two to the right is quicker
 
     clip_x = ((end_x - start_x) >> 2) + 1;
@@ -343,6 +402,93 @@ void drawPlanarTextureClipped(int x, int y, PlanarTexture_t* texture)
         {
             _fmemcpy(&ModeX_buf[plane][(start_y + index_y) * 80 + start_x], &texture->pixels[plane][(index_y + y_offset) * sprite_w + x_offset], clip_x);
         }
+    }
+
+    //version for non-planar buffer
+    /*for (plane = 0; plane < 4; plane++)
+    {
+        for (index_y = 0; index_y < clip_y; index_y++)
+        {
+            _fmemcpy(&ModeX_buf[((SCREEN_WIDTH * (y + index_y) + start_x) / 4) + (plane * PLANE_SIZE_X)], &texture->pixels[plane][(index_y + y_offset) * sprite_w + x_offset], clip_x);
+        }
+    }*/
+}
+
+void drawPlanarTextureWide(int x, int y, PlanarTexture_t* texture, int draw_width)
+{
+    int start_x, start_y, end_x, end_y;
+    int plane, index_y;
+    int clip_x, clip_y;
+    int x_offset = 0;
+    int y_offset = 0;
+    int sprite_w = texture->width;
+    int sprite_h = texture->height;
+    int current_x;
+    int remain_width;
+    int bytes_per_row;
+    int copy_width;
+    int dest_x;
+    int src_x;
+    
+    start_x = x;
+    start_y = y;
+    end_x = start_x + draw_width - 1;
+    end_y = start_y + sprite_h - 1;
+    
+    // Standard clipping checks
+    if (start_x >= SCREEN_WIDTH || start_y >= System.screen_height || 
+        end_x < 0 || end_y < 0)
+        return;
+   
+    if (start_x < 0) {
+        x_offset = abs(start_x) % sprite_w;
+        start_x = 0;
+    }
+   
+    if (end_x >= SCREEN_WIDTH)
+        end_x = SCREEN_WIDTH - 1;
+        
+    if (start_y < 0) {
+        y_offset = abs(start_y);
+        start_y = 0;
+    }
+   
+    if (end_y >= System.screen_height)
+        end_y = System.screen_height - 1;
+
+    clip_y = end_y - start_y + 1;
+    
+    // Process each horizontal section separately
+    current_x = start_x;
+    remain_width = end_x - start_x + 1;
+    bytes_per_row = sprite_w >> 2; // Width in bytes (divided by 4 planes)
+    
+    while (remain_width > 0) {
+        // How much to copy in this iteration
+        copy_width = (remain_width > (sprite_w - x_offset)) ? 
+                         (sprite_w - x_offset) : remain_width;
+        
+        clip_x = copy_width >> 2; // Bytes to copy
+        if (copy_width & 3) clip_x++; // Add one if there's a partial byte
+        
+        dest_x = current_x >> 2; // Destination X in bytes
+        src_x = x_offset >> 2;   // Source X in bytes
+        
+        // Copy for all planes
+        for (plane = 0; plane < 4; plane++) {
+            for (index_y = 0; index_y < clip_y; index_y++) {
+                _fmemcpy(
+                    &ModeX_buf[plane][(start_y + index_y) * 80 + dest_x],
+                    &texture->pixels[plane][(index_y + y_offset) * bytes_per_row + src_x],
+                    clip_x
+                );
+            }
+        }
+        
+        // Move to next section
+        remain_width -= copy_width;
+        current_x += copy_width;
+        x_offset = 0; // Only first segment needs offset
     }
 }
 
@@ -792,8 +938,8 @@ void drawCircle(Vec2* position, int radius, uint8_t color)
     int offset_x;
     int offset_y;
     
-    int center_x = position->x - (int)camera_offset.x;
-    int center_y = position->y - (int)camera_offset.y;
+    int center_x = position->x - camera_offset.x;
+    int center_y = position->y - camera_offset.y;
 
     offset_y = 0;
 
@@ -861,8 +1007,8 @@ void drawRectangleVGA(int x, int y, int w, int h, uint8_t color)
 
 void drawMap()
 {
-    int xi = (int)camera_offset.x / SQUARE_SIZE; // first column in the array to be drawn
-    //int yi = (int)camera_offset.y / SQUARE_SIZE; // first row in the array to be drawn
+    int xi = camera_offset.x / SQUARE_SIZE; // first column in the array to be drawn
+    //int yi = camera_offset.y / SQUARE_SIZE; // first row in the array to be drawn
     int i = xi; // square drawing "index" from array
     int start_index = i; // first index of the array that is drawn on screen
     int x_pixel; // x-coordinate of the currently drawn pixel
@@ -880,10 +1026,140 @@ void drawMap()
         {
             for (x_pixel = 0 - (camera_offset.x - xi * SQUARE_SIZE), num_cols = 0; x_pixel < SCREEN_WIDTH && num_cols <= max_cols; x_pixel += SQUARE_SIZE, num_cols++)
             {
-                if (System.screen_height == SCREEN_HEIGHT_13H)
+                drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                for (a = 0; a < Game.item_count; a++)
+                {
+                    if (Items[a].state == 1)
+                    {                    
+                        if (i == Items[a].index && Items[a].type == ITEM_KEY_RED)
+                            drawTexturePartial(x_pixel, y_pixel, &ObjectTextures.textures[TEX_KEY]);
+                    }
+                }
+                i++;
+            }
+        }
+        else
+        {
+            for (x_pixel = 0 - (camera_offset.x - start_index * SQUARE_SIZE); x_pixel < SCREEN_WIDTH; x_pixel += SQUARE_SIZE)
+            {
+                // eliminate unnecessary drawing on the left of the screen
+                if (x_pixel >= abs(xi) * SQUARE_SIZE)
+                {
                     drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
-                else
-                    drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                    for (a = 0; a < Game.item_count; a++)
+                    {
+                        if (Items[a].state == 1)
+                        {                    
+                            if (i == Items[a].index && Items[a].type == ITEM_KEY_RED)
+                                drawTexturePartial(x_pixel, y_pixel, &ObjectTextures.textures[TEX_KEY]);
+                        }
+                    }
+                }
+                i++;
+            }
+        }
+        num_rows++;
+        i = start_index + (Game.Map.width * num_rows); // jump in the texture array to the next "row"
+    }
+}
+
+void prepareTileRuns(Map_t* map, int cam_x, int cam_y)
+{
+    int x, y;
+    int current_texture_id = -1;
+    int run_start_x = 0;
+    
+    // Calculate the visible area in tiles
+    int start_tile_x = cam_x / SQUARE_SIZE;
+    int start_tile_y = cam_y / SQUARE_SIZE;
+    int end_tile_x = (cam_x + SCREEN_WIDTH + SQUARE_SIZE - 1) / SQUARE_SIZE;
+    int end_tile_y = (cam_y + System.screen_height + SQUARE_SIZE - 1) / SQUARE_SIZE;
+    
+    // Clamp to map boundaries
+    if (start_tile_x < 0) start_tile_x = 0;
+    if (start_tile_y < 0) start_tile_y = 0;
+    if (end_tile_x > map->width) end_tile_x = map->width;
+    if (end_tile_y > map->height) end_tile_y = map->height;
+    
+    tileRunCount = 0;
+    
+    // Scan visible area for runs of identical textures
+    for (y = start_tile_y; y < end_tile_y; y++) {
+        current_texture_id = -1; // Reset at start of row
+        
+        for (x = start_tile_x; x < end_tile_x; x++) {
+            int tile_index = y * map->width + x;
+            int texture_id = map->tilemap[tile_index].texture_id;
+            
+            if (texture_id == current_texture_id) {
+                // Continue current run
+                continue;
+            } else {
+                // End previous run if there was one
+                if (current_texture_id != -1 && x > run_start_x) {
+                    if (tileRunCount < MAX_TILE_RUNS) {
+                        tileRuns[tileRunCount].x = run_start_x * SQUARE_SIZE - cam_x;
+                        tileRuns[tileRunCount].y = y * SQUARE_SIZE - cam_y;
+                        tileRuns[tileRunCount].width = (x - run_start_x) * SQUARE_SIZE;
+                        tileRuns[tileRunCount].texture_id = current_texture_id;
+                        tileRunCount++;
+                    }
+                }
+                
+                // Start new run
+                run_start_x = x;
+                current_texture_id = texture_id;
+            }
+        }
+        
+        // End run at end of row
+        if (current_texture_id != -1) {
+            if (tileRunCount < MAX_TILE_RUNS) {
+                tileRuns[tileRunCount].x = run_start_x * SQUARE_SIZE - cam_x;
+                tileRuns[tileRunCount].y = y * SQUARE_SIZE - cam_y;
+                tileRuns[tileRunCount].width = (end_tile_x - run_start_x) * SQUARE_SIZE;
+                tileRuns[tileRunCount].texture_id = current_texture_id;
+                tileRunCount++;
+            }
+        }
+    }
+}
+
+void drawTileRuns(PlanarTexture_array* texture_array)
+{
+    int i;
+    for (i = 0; i < tileRunCount; i++) {
+        drawPlanarTextureWide(
+            tileRuns[i].x, 
+            tileRuns[i].y, 
+            &texture_array->textures[tileRuns[i].texture_id], 
+            tileRuns[i].width
+        );
+    }
+}
+
+void drawMapPlanar()
+{
+    int xi = camera_offset.x / SQUARE_SIZE; // first column in the array to be drawn
+    //int yi = camera_offset.y / SQUARE_SIZE; // first row in the array to be drawn
+    int i = xi; // square drawing "index" from array
+    int start_index = i; // first index of the array that is drawn on screen
+    int x_pixel; // x-coordinate of the currently drawn pixel
+    int y_pixel; // y-coordinate of the currently drawn pixel
+    int num_rows; // number of "rows" traversed in the array
+    int num_cols; // number of "columns" traversed in the array
+    int max_cols = Game.Map.width - xi - 1; // max columns to draw
+    int max_rows = Game.Map.height; // max rows to draw
+    int a; // array index for Interactives array
+
+    // run loops until maximum number of squares is drawn and the edges of the screen have been reached
+    for (y_pixel = 0 - camera_offset.y, num_rows = 0; y_pixel < System.screen_height && num_rows < max_rows; y_pixel += SQUARE_SIZE)
+    {
+        if (camera_offset.x > 0)
+        {
+            for (x_pixel = 0 - (camera_offset.x - xi * SQUARE_SIZE), num_cols = 0; x_pixel < SCREEN_WIDTH && num_cols <= max_cols; x_pixel += SQUARE_SIZE, num_cols++)
+            {
+                drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
                 /*for (a = 0; a < Game.item_count; a++)
                 {
                     if (Items[a].state == 1)
@@ -902,10 +1178,7 @@ void drawMap()
                 // eliminate unnecessary drawing on the left of the screen
                 if (x_pixel >= abs(xi) * SQUARE_SIZE)
                 {
-                    if (System.screen_height == SCREEN_HEIGHT_13H)
-                        drawTextureClipped(x_pixel, y_pixel, &TileTextures.textures[Game.Map.tilemap[i].texture_id]);
-                    else
-                        drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
+                    drawPlanarTextureClipped(x_pixel, y_pixel, &PlanarTileTextures.textures[Game.Map.tilemap[i].texture_id]);
                     /*for (a = 0; a < Game.item_count; a++)
                     {
                         if (Items[a].state == 1)
@@ -938,9 +1211,9 @@ void calcCameraOffset()
     float angle;
 
     int cam_min_x = SCREEN_WIDTH/2;
-    int cam_max_x = Game.Map.width*SQUARE_SIZE - SCREEN_WIDTH/2;
+    int cam_max_x = Game.Map.width * SQUARE_SIZE - SCREEN_WIDTH/2;
     int cam_min_y = System.screen_height/2;
-    int cam_max_y = Game.Map.height*SQUARE_SIZE - System.screen_height/2;
+    int cam_max_y = Game.Map.height * SQUARE_SIZE - System.screen_height/2;
 
     angle = atan2(PLAYER_ACTOR.direction.y, PLAYER_ACTOR.direction.x);
     pos.x = PLAYER_ACTOR.position.x + cos(angle) * LOOK_DISTANCE;
@@ -956,8 +1229,8 @@ void calcCameraOffset()
     else if (pos.y > cam_max_y)
         pos.y = cam_max_y;
 
-    camera_offset.x = pos.x - (SCREEN_WIDTH / 2);// - SQUARE_SIZE / 2;
-    camera_offset.y = pos.y - (System.screen_height / 2);// - SQUARE_SIZE / 2;
+    camera_offset.x = pos.x - (SCREEN_WIDTH / 2);
+    camera_offset.y = pos.y - (System.screen_height / 2);
 }
 
 void drawDot(Actor_t* actor)
@@ -972,8 +1245,8 @@ void drawDot(Actor_t* actor)
     dot_radians = atan2(actor->direction.y, actor->direction.x);
     
     // directional dot's offsets from the center of the actor
-    offset_y = sin(dot_radians) * DOT_DISTANCE - (int)camera_offset.y;
-    offset_x = cos(dot_radians) * DOT_DISTANCE - (int)camera_offset.x;
+    offset_y = sin(dot_radians) * DOT_DISTANCE - camera_offset.y;
+    offset_x = cos(dot_radians) * DOT_DISTANCE - camera_offset.x;
     pos_x = actor->position.x + offset_x;
     pos_y = actor->position.y + offset_y;
 
@@ -1541,19 +1814,28 @@ void testFont()
 void gameDraw()
 {
     calcCameraOffset();
-    drawMap();
-    corpseArrayManager();
-    testSetPlayerAnim();
-    //drawActors();
-    //drawHealth();
-    //drawStats();
-    //testFont();
-    //animTestBlock();
-    //rocketPrecacheTest();
-    particleArrayManager();
-    tempSpriteArrayManager();
-    //drawRLEGfx(0, 0, &LargeRLETest);
-    //drawRLEGfx(50, 50, &RLETest);
+    if (System.screen_height == SCREEN_HEIGHT_13H)
+    {
+        drawMap();
+        corpseArrayManager();
+        testSetPlayerAnim();
+        drawActors();
+        drawHealth();
+        drawStats();
+        //testFont();
+        //animTestBlock();
+        //rocketPrecacheTest();
+        particleArrayManager();
+        tempSpriteArrayManager();
+        //drawRLEGfx(0, 0, &LargeRLETest);
+        //drawRLEGfx(50, 50, &RLETest);
+    }
+    else
+    {
+        //drawMapPlanar();
+        prepareTileRuns(&Game.Map, camera_offset.x, camera_offset.y);
+        drawTileRuns(&PlanarTileTextures);
+    }
     #if DEBUG == 1
     if (System.debug_mode == TRUE)
     {

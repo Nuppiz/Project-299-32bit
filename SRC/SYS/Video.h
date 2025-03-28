@@ -9,12 +9,13 @@ extern uint8_t far* ModeX_buf[];
 
 int checkForVGA();
 void setVideoMode(uint8_t mode);
-void initMode13h();
+void setMode13h();
 void setModeX();
 void loadPalette(char* filename, Palette_t* pal);
 void setPalette_VGA(Palette_t* pal);
 void render13h();
 void renderWithoutClear();
 void renderModeX();
+void dumpDisplayBuffer();
 
 #endif /* VIDEO_H */

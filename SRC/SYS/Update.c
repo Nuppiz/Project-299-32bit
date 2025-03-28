@@ -19,7 +19,7 @@ void menuUpdate()
 
 void gameUpdate()
 {
-    AILoop();
+    //AILoop();
     physics();
     checkForItem();
     checkForInteractive();

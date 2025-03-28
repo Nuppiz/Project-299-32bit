@@ -171,11 +171,15 @@ void testButtons()
     if (KEY_WAS_HIT(KEY_X) && KEY_WAS_HIT(KEY_V))
     {
         if (System.screen_height == 200)
+        {
             setModeX();
+            levelLoader("LEVEL3.LEV", 0);
+        }
         else
         {
             setVideoMode(0x13);
-            initMode13h();
+            setMode13h();
+            levelLoader("LEVEL3.LEV", 0);
         }
     }
     #endif
@@ -238,9 +242,12 @@ void titleInput()
         else
         {
             setVideoMode(0x13);
-            initMode13h();
+            setMode13h();
         }
     }
+
+    if (KEY_WAS_HIT(KEY_PRINT_SCRN))
+        dumpDisplayBuffer();
     
     // F10 always exits, wherever you are
     if (KEY_WAS_HIT(KEY_F10))

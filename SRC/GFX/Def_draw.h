@@ -39,6 +39,9 @@
 #define COLOUR_BLUE         200
 #define TRANSPARENT_COLOR   251
 
+#define MAX_TILE_RUNS       256
+#define TILE_SIZE           20
+
 #define TEXTURE_FLAGS_TRANSPARENCY  BIT_0
 #define TEXTURE_FLAGS_LARGE_RLE     BIT_1
 #define TEXTURE_FLAGS_ROWED_RLE     BIT_2

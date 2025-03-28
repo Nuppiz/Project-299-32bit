@@ -116,4 +116,12 @@ typedef struct {
     RotatedTexture_t sprite;
 } Corpse_t;
 
+// Structure to track runs of identical tiles
+typedef struct {
+    int x;              // Starting x position in pixels (screen coords)
+    int y;              // Y position in pixels (screen coords)
+    int width;          // Width in pixels
+    int texture_id;     // Texture ID to use
+} TileRun;
+
 #endif /* STR_DRAW_H */

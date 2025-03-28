@@ -83,7 +83,7 @@ void deleteDirectoryContents(char* dirname)
     closedir(folder);
 }
 
-void copyFile(char* source_dirname, char* source_filename, char* dest_dirname, char* dest_filename)
+static void copyFile(char* source_dirname, char* source_filename, char* dest_dirname, char* dest_filename)
 {
     FILE* source_file, *dest_file;
     char source_path[50] = {'\0'}; // container for the full path to source file
