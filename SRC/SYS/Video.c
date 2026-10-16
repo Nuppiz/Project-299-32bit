@@ -47,7 +47,7 @@ void setVideoMode(uint8_t mode)
 }
 
 // loads the palette from a 256-colour bitmap file
-void loadPalette(char* filename, Palette_t* pal)
+void loadPaletteFromBMP(char* filename, Palette_t* pal)
 {
     FILE *fp;
     int i;
@@ -55,23 +55,42 @@ void loadPalette(char* filename, Palette_t* pal)
     // Open the file
     fp = fopen(filename, "rb");
     
-    // skip forward and read the number of colours
+    // skip forward to the colour index table
     fseek(fp, 0x0036, SEEK_SET);
     
     // load palette
     for (i = 0; i < 256; i++)
-    {
-        // uint8_t r,g,b;
-        // VGA palette values only go up to 6 bits, (2 ^ 6 == 64 different shades)
-        // while bitmap palettes go up to 8 bits, (2 ^ 8 == 256 different shades)
-        // right shift (>>) the bits by two places so an 8-bit value becomes a 6-bit
-        // this divides the shade value (0-255) by four, giving a value between 0-63
-  
+    {  
         pal->colors[i].b = fgetc(fp);
         pal->colors[i].g = fgetc(fp);
         pal->colors[i].r = fgetc(fp);
 
-        fgetc(fp); // discarded  value
+        fgetc(fp); // discarded value
+    }
+
+    fclose(fp);
+}
+
+// loads the palette from a standard RIFF PAL file
+void loadPaletteFromPAL(char* filename, Palette_t* pal)
+{
+    FILE *fp;
+    int i;
+    
+    // Open the file
+    fp = fopen(filename, "rb");
+    
+    // skip forward to the colour index table
+    fseek(fp, 0x0018, SEEK_SET);
+    
+    // load palette
+    for (i = 0; i < 256; i++)
+    {  
+        pal->colors[i].r = fgetc(fp);
+        pal->colors[i].g = fgetc(fp);
+        pal->colors[i].b = fgetc(fp);
+
+        fgetc(fp); // discarded value
     }
 
     fclose(fp);
@@ -84,9 +103,14 @@ void setPalette_VGA(Palette_t* pal)
 
     for (i = 0; i < 256; i++)
     {
-       outportb(PALETTE_DATA, (pal->colors[i].r>>2));
-       outportb(PALETTE_DATA, (pal->colors[i].g>>2));
-       outportb(PALETTE_DATA, (pal->colors[i].b>>2));
+	    /* VGA palette values only go up to 6 bits, (2 ^ 6 == 64 different shades)
+        while bitmap palettes go up to 8 bits, (2 ^ 8 == 256 different shades)
+        right shift (>>) the bits by two places so an 8-bit value becomes a 6-bit
+        this divides the shade value (0-255) by four, giving a value between 0-63 */
+
+        outportb(PALETTE_DATA, (pal->colors[i].r>>2));
+        outportb(PALETTE_DATA, (pal->colors[i].g>>2));
+        outportb(PALETTE_DATA, (pal->colors[i].b>>2));
     }
 }
 
@@ -115,7 +139,7 @@ void setMode13h()
     System.screen_height = SCREEN_HEIGHT_13H;
     current_video_mode = MODE_13H;
 
-    loadPalette("Pal.bmp", &NewPalette);
+    loadPaletteFromBMP("Pal.bmp", &NewPalette);
     setPalette_VGA(&NewPalette);
 }
 

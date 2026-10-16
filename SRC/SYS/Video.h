@@ -11,7 +11,7 @@ int checkForVGA();
 void setVideoMode(uint8_t mode);
 void setMode13h();
 void setModeX();
-void loadPalette(char* filename, Palette_t* pal);
+void loadPaletteFromBMP(char* filename, Palette_t* pal);
 void setPalette_VGA(Palette_t* pal);
 void render13h();
 void renderWithoutClear();
