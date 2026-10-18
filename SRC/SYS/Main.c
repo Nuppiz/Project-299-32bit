@@ -181,3 +181,5 @@ void main()
             quitSetup();
     }
 }
+
+// testing if Git is working
